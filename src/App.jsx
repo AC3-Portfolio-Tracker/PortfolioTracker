@@ -2,7 +2,7 @@ import React from "react";
 import "./App.css";
 import Header from "./components/Header";
 import WelcomeSection from "./components/WelcomeSection";
-import Settings from "./components/Settings";
+import Settings from "./pages/Settings"; // Changed import to 'Settings'
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 
 function App() {
@@ -21,7 +21,8 @@ function App() {
             {/* Placeholder */}
             <Route path="/activities" element={<ActivitiesPage />} />{" "}
             {/* Placeholder */}
-            <Route path="/settings" element={<Settings />} />
+            <Route path="/settings" element={<Settings />} />{" "}
+            {/* Using the correctly imported 'SettingsPage' (which is now 'Settings') */}
           </Routes>
         </div>
       </div>

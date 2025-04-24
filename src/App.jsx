@@ -2,7 +2,8 @@ import React from "react";
 import "./App.css";
 import Header from "./components/Header";
 import WelcomeSection from "./components/WelcomeSection";
-import Settings from "./pages/Settings"; // Changed import to 'Settings'
+import Settings from "./pages/Settings";
+import Broker from "./pages/Broker"; // Changed import to 'Settings'
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 
 function App() {
@@ -13,16 +14,13 @@ function App() {
         <div className="content">
           <Routes>
             <Route path="/" element={<WelcomeSection />} />
-            <Route path="/holdings" element={<HoldingsPage />} />{" "}
-            {/* Placeholder */}
-            <Route path="/performance" element={<PerformancePage />} />{" "}
-            {/* Placeholder */}
-            <Route path="/income" element={<IncomePage />} />{" "}
-            {/* Placeholder */}
-            <Route path="/activities" element={<ActivitiesPage />} />{" "}
-            {/* Placeholder */}
-            <Route path="/settings" element={<Settings />} />{" "}
-            {/* Using the correctly imported 'SettingsPage' (which is now 'Settings') */}
+            <Route path="/holdings" element={<HoldingsPage />} />
+            <Route path="/performance" element={<PerformancePage />} />
+            <Route path="/income" element={<IncomePage />} />
+            <Route path="/activities" element={<ActivitiesPage />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/brokers" element={<Broker />} />{" "}
+            {/* Add the new route */}
           </Routes>
         </div>
       </div>

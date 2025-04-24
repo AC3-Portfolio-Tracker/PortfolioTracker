@@ -18,6 +18,11 @@ function Header() {
             </Link>
           </li>
           <li>
+            <Link to="/brokers" activeClassName="active">
+              Brokers
+            </Link>
+          </li>
+          <li>
             <Link to="/holdings" activeClassName="active">
               Holdings
             </Link>

@@ -1,0 +1,154 @@
+.settings-page {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  color: #eee;
+}
+
+.settings-header {
+  margin-bottom: 30px;
+}
+
+.settings-header h1 {
+  font-size: 2rem;
+  margin-bottom: 5px;
+}
+
+.settings-header .settings-subheader {
+  color: #ccc;
+  font-size: 0.9rem;
+}
+
+.settings-content {
+  display: flex;
+  gap: 30px;
+}
+
+.sidebar {
+  width: 200px;
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar li {
+  padding: 10px 15px;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background-color 0.2s ease;
+}
+
+.sidebar li.active {
+  background-color: #444;
+  font-weight: bold;
+}
+
+.sidebar li:hover {
+  background-color: #333;
+}
+
+.main-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.general-settings {
+  display: flex;
+  gap: 20px;
+}
+
+.base-currency-card,
+.exchange-rates-card,
+.added-exchange-rates {
+  background-color: #333;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.base-currency-card h3,
+.exchange-rates-card h3,
+.added-exchange-rates h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.currency-selector select {
+  padding: 10px;
+  border: 1px solid #555;
+  border-radius: 5px;
+  background-color: #444;
+  color: #eee;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.save-button {
+  background-color: #007bff;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.2s ease;
+  margin-top: 15px;
+}
+
+.save-button:hover {
+  background-color: #0056b3;
+}
+
+.exchange-rates-card .no-rates {
+  color: #aaa;
+  margin-bottom: 15px;
+}
+
+.add-rate-button {
+  background-color: #5cb85c;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.2s ease;
+}
+
+.add-rate-button:hover {
+  background-color: #4cae4c;
+}
+
+.exchange-rates-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.exchange-rates-table th,
+.exchange-rates-table td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #444;
+}
+
+.exchange-rates-table th {
+  font-weight: bold;
+}
+
+.exchange-rates-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.exchange-rates-table td:last-child {
+  text-align: right;
+}
+
+.exchange-rates-table td span {
+  cursor: pointer;
+  margin-left: 10px;
+  font-size: 1.1rem;
+}

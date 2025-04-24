@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "../components/Settings.css"; // Or './SettingsPage.css'
 import PortfolioSettings from "./PortfolioSettings";
+import LimitsSettings from "./LimitsSettings";
 
 function SettingsPage() {
   const [activeTab, setActiveTab] = useState("General");
@@ -91,9 +92,9 @@ function SettingsPage() {
           )}
 
           {activeTab === "Portfolio" && <PortfolioSettings />}
+          {activeTab === "Limits" && <LimitsSettings />}
 
           {/* Add other tab content here based on activeTab */}
-          {activeTab === "Limits" && <div>Limits Settings</div>}
           {activeTab === "Goals" && <div>Goals Settings</div>}
           {activeTab === "Appearance" && <div>Appearance Settings</div>}
           {activeTab === "Data Export" && <div>Data Export Settings</div>}

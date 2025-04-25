@@ -1,10 +1,34 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.jsx'
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App";
+import { ThemeProvider, createTheme } from "@mui/material/styles";
+import "./index.css"; // Or your global CSS file
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
+const darkTheme = createTheme({
+  palette: {
+    mode: "dark",
+    primary: {
+      main: "#90caf9", // Example primary color
+    },
+    secondary: {
+      main: "#f48fb1", // Example secondary color
+    },
+    background: {
+      default: "#222", // Your dark background color
+      paper: "#333", // Example paper background for cards etc.
+    },
+    text: {
+      primary: "#fff", // Your primary text color
+      secondary: "#ccc", // Your secondary text color
+    },
+  },
+});
+
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <ThemeProvider theme={darkTheme}>
+      <App />
+    </ThemeProvider>
+  </React.StrictMode>
+);
+  

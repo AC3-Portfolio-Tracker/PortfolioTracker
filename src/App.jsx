@@ -3,7 +3,9 @@ import "./App.css";
 import Header from "./components/Header";
 import WelcomeSection from "./components/WelcomeSection";
 import Settings from "./pages/Settings";
-import Broker from "./pages/Broker"; // Changed import to 'Settings'
+import Broker from "./pages/Broker";
+import Login from "./pages/Login";
+import SignUp from "./pages/Signup";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 
 function App() {
@@ -19,6 +21,8 @@ function App() {
             <Route path="/income" element={<IncomePage />} />
             <Route path="/activities" element={<ActivitiesPage />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<SignUp />} />
             <Route path="/brokers" element={<Broker />} />{" "}
             {/* Add the new route */}
           </Routes>

@@ -1,6 +1,7 @@
 import React from "react";
 import "./App.css";
 import Header from "./components/Header";
+import Performance from "./pages/Performance"
 import WelcomeSection from "./components/WelcomeSection";
 import Settings from "./pages/Settings";
 import Broker from "./pages/Broker";
@@ -17,7 +18,7 @@ function App() {
           <Routes>
             <Route path="/" element={<WelcomeSection />} />
             <Route path="/holdings" element={<HoldingsPage />} />
-            <Route path="/performance" element={<PerformancePage />} />
+            <Route path="/performance" element={<Performance />} />
             <Route path="/income" element={<IncomePage />} />
             <Route path="/activities" element={<ActivitiesPage />} />
             <Route path="/settings" element={<Settings />} />

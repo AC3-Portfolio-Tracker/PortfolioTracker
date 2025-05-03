@@ -1,56 +1,122 @@
 import React, { useState } from "react";
-import { TextField, Button, Typography, Paper, Box, Link } from "@mui/material";
-import { Person, Lock, Mail, Phone } from "@mui/icons-material";
+import {
+  TextField,
+  Button,
+  Typography,
+  Paper,
+  Box,
+  Link,
+  Grid,
+  Alert,
+} from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { useTheme } from "@mui/material/styles"; // Import useTheme
+import { useTheme } from "@mui/material/styles";
+import { useNavigate, Link as RouterLink } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   width: "100%",
-  maxWidth: 400,
+  maxWidth: 500,
   padding: theme.spacing(4),
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
-  borderRadius: theme.shape.borderRadius * 2, // More rounded corners
-  boxShadow: theme.shadows[8], // Slightly more prominent shadow
+  borderRadius: theme.shape.borderRadius * 2,
+  boxShadow: theme.shadows[8],
   backgroundColor: theme.palette.background.paper,
 }));
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
-  margin: theme.spacing(2, 0, 3, 0), // Increased vertical spacing
+  margin: theme.spacing(1.5, 0),
   width: "100%",
 }));
 
 const StyledButton = styled(Button)(({ theme }) => ({
-  padding: theme.spacing(1.5, 4), // More padding
+  padding: theme.spacing(1.5, 4),
   fontSize: "1rem",
-  fontWeight: 600, // Semi-bold text
+  fontWeight: 600,
   borderRadius: theme.shape.borderRadius * 2,
   margin: theme.spacing(3, 0, 2, 0),
 }));
 
-function SignUpPage() {
-  const [name, setName] = useState("");
+function SignupPage() {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const theme = useTheme(); // Use the theme
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
+  const theme = useTheme();
+  const navigate = useNavigate();
+  const { signUp } = useAuth();
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    console.log("Sign Up submitted:", {
-      name,
-      email,
-      phone,
-      password,
-      confirmPassword,
-    });
+    
+    // Validate passwords match
     if (password !== confirmPassword) {
-      alert("Passwords don't match");
+      setError("Passwords do not match");
       return;
     }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Additional user data to store in the profile
+      const userData = {
+        first_name: firstName,
+        last_name: lastName,
+      };
+
+      const { user } = await signUp(email, password, userData);
+      
+      // If no user is returned, it might mean email confirmation is required
+      if (!user) {
+        setSuccess(true);
+      } else {
+        // If we have the user right away, redirect to home
+        navigate("/");
+      }
+    } catch (err) {
+      console.error("Signup error:", err);
+      setError(err.message || "Failed to sign up. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
+
+  // Show success message if email confirmation is required
+  if (success) {
+    return (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="100vh"
+        bgcolor={theme.palette.background.default}
+      >
+        <StyledPaper>
+          <Typography variant="h5" gutterBottom color="primary">
+            Verification Email Sent
+          </Typography>
+          <Typography variant="body1" align="center" sx={{ mb: 3 }}>
+            A confirmation email has been sent to {email}. Please check your inbox and click the link to confirm your account.
+          </Typography>
+          <Button
+            component={RouterLink}
+            to="/login"
+            variant="contained"
+            color="primary"
+          >
+            Return to Login
+          </Button>
+        </StyledPaper>
+      </Box>
+    );
+  }
 
   return (
     <Box
@@ -58,76 +124,88 @@ function SignUpPage() {
       justifyContent="center"
       alignItems="center"
       minHeight="100vh"
-      bgcolor={theme.palette.background.default} // Use theme background
+      bgcolor={theme.palette.background.default}
     >
       <StyledPaper>
         <Typography variant="h4" gutterBottom color="primary">
           Create Account
         </Typography>
+        
+        {error && (
+          <Alert severity="error" sx={{ width: "100%", mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+        
         <form onSubmit={handleSubmit} style={{ width: "100%" }}>
-          <StyledTextField
-            label="Full Name"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            InputProps={{
-              startAdornment: <Person color="action" sx={{ mr: 1 }} />,
-            }}
-          />
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6}>
+              <StyledTextField
+                label="First Name"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                required
+                fullWidth
+                disabled={loading}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <StyledTextField
+                label="Last Name"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                required
+                fullWidth
+                disabled={loading}
+              />
+            </Grid>
+          </Grid>
+          
           <StyledTextField
             label="Email Address"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            InputProps={{
-              startAdornment: <Mail color="action" sx={{ mr: 1 }} />,
-            }}
+            fullWidth
+            disabled={loading}
           />
-          <StyledTextField
-            label="Phone Number"
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            required
-            InputProps={{
-              startAdornment: <Phone color="action" sx={{ mr: 1 }} />,
-            }}
-          />
+          
           <StyledTextField
             label="Password"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            InputProps={{
-              startAdornment: <Lock color="action" sx={{ mr: 1 }} />,
-            }}
+            fullWidth
+            disabled={loading}
           />
+          
           <StyledTextField
             label="Confirm Password"
             type="password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
-            InputProps={{
-              startAdornment: <Lock color="action" sx={{ mr: 1 }} />,
-            }}
+            fullWidth
+            disabled={loading}
           />
+          
           <StyledButton
             type="submit"
             variant="contained"
             color="primary"
             fullWidth
+            disabled={loading}
           >
-            Sign Up
+            {loading ? "Creating Account..." : "Sign Up"}
           </StyledButton>
+          
           <Box mt={2} textAlign="center">
             <Typography variant="body2" color="text.secondary">
               Already have an account?{" "}
-              <Link href="/login" variant="subtitle2" color="primary">
-                Log In
+              <Link component={RouterLink} to="/login" variant="subtitle2" color="primary">
+                Sign in
               </Link>
             </Typography>
           </Box>
@@ -137,4 +215,4 @@ function SignUpPage() {
   );
 }
 
-export default SignUpPage;
+export default SignupPage;

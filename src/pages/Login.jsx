@@ -7,10 +7,13 @@ import {
   Box,
   Link,
   IconButton,
+  Alert,
 } from "@mui/material";
 import { Lock, Person } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
-import { useTheme } from "@mui/material/styles"; // Import useTheme
+import { useTheme } from "@mui/material/styles";
+import { useNavigate, Link as RouterLink } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   width: "100%",
@@ -40,11 +43,27 @@ const StyledButton = styled(Button)(({ theme }) => ({
 function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const theme = useTheme(); // Use the theme for dynamic styling
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const theme = useTheme();
+  const navigate = useNavigate();
+  const { signIn } = useAuth();
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    console.log("Login submitted:", { email, password });
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { user } = await signIn(email, password);
+      console.log("Login successful", user);
+      navigate("/"); // Redirect to home page after login
+    } catch (err) {
+      console.error("Login error:", err);
+      setError(err.message || "Failed to sign in. Please check your credentials.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -59,6 +78,13 @@ function LoginPage() {
         <Typography variant="h4" gutterBottom color="primary">
           Sign In
         </Typography>
+        
+        {error && (
+          <Alert severity="error" sx={{ width: "100%", mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+        
         <form onSubmit={handleSubmit} style={{ width: "100%" }}>
           <StyledTextField
             label="Email Address"
@@ -69,6 +95,7 @@ function LoginPage() {
             InputProps={{
               startAdornment: <Person color="action" sx={{ mr: 1 }} />, // Add some spacing
             }}
+            disabled={loading}
           />
           <StyledTextField
             label="Password"
@@ -79,19 +106,21 @@ function LoginPage() {
             InputProps={{
               startAdornment: <Lock color="action" sx={{ mr: 1 }} />, // Add some spacing
             }}
+            disabled={loading}
           />
           <StyledButton
             type="submit"
             variant="contained"
             color="primary"
             fullWidth
+            disabled={loading}
           >
-            Log In
+            {loading ? "Signing In..." : "Log In"}
           </StyledButton>
           <Box mt={2} textAlign="center">
             <Typography variant="body2" color="text.secondary">
               Don't have an account?{" "}
-              <Link href="/signup" variant="subtitle2" color="primary">
+              <Link component={RouterLink} to="/signup" variant="subtitle2" color="primary">
                 Create one
               </Link>
             </Typography>

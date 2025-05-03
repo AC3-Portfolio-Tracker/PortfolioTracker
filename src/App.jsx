@@ -2,8 +2,7 @@ import React from "react";
 import "./App.css";
 import Header from "./components/Header";
 import Performance from "./pages/Performance"
-import CSVuploader from "./components/CSVuploader";
-import ActivityTable from "./components/ActivityTable";
+import ActivitiesPage from "./pages/ActivitiesPage";
 import WelcomeSection from "./components/WelcomeSection";
 import Settings from "./pages/Settings";
 import Broker from "./pages/Broker";
@@ -41,6 +40,6 @@ function App() {
 
 const PerformancePage = () => <div>Performance Page</div>;
 const IncomePage = () => <div>Income Page</div>;
-//const ActivitiesPage = () => <div>Activities Page</div>;
+
 
 export default App;

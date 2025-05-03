@@ -9,7 +9,9 @@ import Settings from "./pages/Settings";
 import Broker from "./pages/Broker";
 import Login from "./pages/Login";
 import SignUp from "./pages/Signup";
+import Holdings from "./pages/Holdings";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+
 
 function App() {
   return (
@@ -19,7 +21,7 @@ function App() {
         <div className="content">
           <Routes>
             <Route path="/" element={<WelcomeSection />} />
-            <Route path="/holdings" element={<HoldingsPage />} />
+            <Route path="/holdings" element={<Holdings />} />
             <Route path="/performance" element={<Performance />} />
             <Route path="/income" element={<IncomePage />} />
             <Route path="/activities" element={<ActivitiesPage />} />
@@ -36,7 +38,7 @@ function App() {
 }
 
 // Placeholder components for other pages
-const HoldingsPage = () => <div>Holdings Page</div>;
+
 const PerformancePage = () => <div>Performance Page</div>;
 const IncomePage = () => <div>Income Page</div>;
 //const ActivitiesPage = () => <div>Activities Page</div>;

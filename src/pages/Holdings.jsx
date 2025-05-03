@@ -1,12 +1,12 @@
 import React from 'react';
-import HoldingsChart from './components/HoldingsChart';
-import CountryChart from './components/CountryChart';
-import CurrencyChart from './components/CurrencyChart';
-import ClassChart from './components/ClassChart';
-import SectorChart from './components/SectorChart';
-//import TotalHoldingsCard from './components/TotalHoldingsCard';
+import HoldingsChart from '../components/HoldingsChart';
+import CountryChart from '../components/CountryChart';
+import CurrencyChart from '../components/CurrencyChart';
+import ClassChart from '../components/ClassChart';
+import SectorChart from '../components/SectorChart';
+//import TotalHoldingsCard from '../components/TotalHoldingsCard';
 
-const HoldingsPage = () => {
+const Holdings = () => {
   // Sample holdings data
   const holdings = [
     { symbol: 'AAPL', name: 'Apple Inc.', quantity: 10, price: 180, class: 'Equity', currency: 'EURO', country: 'Italy', sector: 'Technology' },
@@ -78,4 +78,4 @@ const cellStyle = {
   textAlign: 'center',
 };
 
-export default HoldingsPage;
+export default Holdings;

@@ -44,6 +44,17 @@ function Header() {
               </Link>
             </li>
             <li>
+            <Link to="/pricing" activeClassName="active">
+              Pricing
+            </Link>
+          </li>
+          <li>
+            <Link to="/features" activeClassName="active">
+              Features
+            </Link>
+          </li>
+
+            <li>
               <Link to="/income" activeClassName="active">
                 Income
               </Link>

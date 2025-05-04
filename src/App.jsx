@@ -11,6 +11,8 @@ import SignUp from "./pages/Signup";
 import Holdings from "./pages/Holdings";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import PricingPage from "./pages/PricingPage";
+import FeaturesPage from "./pages/FeaturesPage";
 import { useAuth } from "./contexts/AuthContext";
 
 function App() {
@@ -44,6 +46,8 @@ function App() {
                 <Performance />
               </ProtectedRoute>
             } />
+            <Route path="/pricing" element={<PricingPage />} />
+            <Route path="/features" element={<FeaturesPage />} />
             
             <Route path="/income" element={
               <ProtectedRoute>

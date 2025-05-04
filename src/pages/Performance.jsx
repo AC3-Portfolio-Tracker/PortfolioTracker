@@ -1,43 +1,70 @@
 import React from "react";
 import TimeFilters from "./TimeFilters";
 import Dropdowns from "./Dropdowns";
-import PerformanceChart from "./PerformanceChart";
 import ModeToggle from "./ModeToggle";
+import PerformanceChart from "./PerformanceChart";
+import AssetsTable from "./AssetsTable";
+import "../components/Performance.css";
 
 const Performance = () => {
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-      
-      {/* Page Wrapper */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-          <h2 className="text-2xl font-bold">Portfolio Performance</h2>
-          <ModeToggle />
+    <div>
+      <div className="performance-container">
+        {/* Top Navbar */}
+        <div className="navbar">
+          <div className="navbar-title">Your Portfolio</div>
+          <div className="navbar-right">
+            <div className="portfolio-value">
+              <p className="portfolio-label">Current Portfolio Value</p>
+              <p className="portfolio-amount">$0.00</p>
+            </div>
+            <div className="account-info">Account ▾</div>
+          </div>
         </div>
 
-        {/* Filters and Dropdowns */}
-        <div className="flex flex-wrap gap-3 mb-6">
-          <TimeFilters />
-          <Dropdowns />
-        </div>
+        {/* Page Content Wrapper */}
+        <div className="content-wrapper">
+          {/* Filters Section */}
+          <div className="filters-section">
+            {/* <TimeFilters /> */}
+            <Dropdowns />
+          </div>
 
-        {/* Chart Card */}
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-          <h3 className="text-lg font-semibold mb-4">Cumulative Returns</h3>
-          <PerformanceChart />
+          {/* Toggles Section */}
+          <div className="toggles-section">
+            <div className="toggle-card">
+              <span className="toggle-label">Open & Closed Positions</span>
+              <ModeToggle />
+            </div>
+            <div className="toggle-card">
+              <span className="toggle-label">Percentage Gains</span>
+              <ModeToggle />
+            </div>
+          </div>
 
-          {/* Chart Type Toggle */}
-          <div className="flex justify-end mt-4 space-x-2">
-            <button className="px-3 py-1 text-xs font-medium border rounded hover:bg-gray-200 dark:hover:bg-gray-700">
-              Time-Weighted
-            </button>
-            <button className="px-3 py-1 text-xs font-medium border rounded hover:bg-gray-200 dark:hover:bg-gray-700">
-              Money-Weighted
-            </button>
+          {/* Performance Chart Card */}
+          <div className="chart-card">
+            <PerformanceChart />
+          </div>
+
+          {/* Assets Table Card */}
+          <div className="assets-table-card">
+            <AssetsTable />
           </div>
         </div>
       </div>
+      <footer className="footer">
+        <div className="footer-content">
+          <p>
+            &copy; {new Date().getFullYear()} PortfolioTracker. All rights reserved.
+          </p>
+          <div className="footer-links">
+            <a href="/privacy">Privacy Policy</a>
+            <a href="/terms">Terms of Service</a>
+            <a href="/contact">Contact Us</a>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };

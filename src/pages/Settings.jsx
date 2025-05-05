@@ -7,8 +7,10 @@ import DataExportSettings from "./DataExportSettings";
 import { useAuth } from "../contexts/AuthContext";
 import { settings } from "../lib/supabase";
 import { TextField, MenuItem, Button, Alert, CircularProgress } from "@mui/material";
+import { useLocation } from "react-router-dom";
 
 function SettingsPage() {
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState("General");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -33,6 +35,13 @@ function SettingsPage() {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const { user } = useAuth();
+
+  useEffect(() => {
+    // Check if we have a specific tab to activate from navigation state
+    if (location.state?.activeTab) {
+      setActiveTab(location.state.activeTab);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     const fetchSettings = async () => {

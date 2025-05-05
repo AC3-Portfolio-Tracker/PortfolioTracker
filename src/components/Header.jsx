@@ -1,16 +1,48 @@
-import React from "react";
+import React, { useState } from "react";
 import "./Header.css";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { Button } from "@mui/material";
+import { 
+  Button, 
+  Menu, 
+  MenuItem, 
+  Avatar, 
+  Divider, 
+  ListItemIcon, 
+  IconButton,
+  Typography
+} from "@mui/material";
+import { 
+  Person as PersonIcon, 
+  Settings as SettingsIcon, 
+  Logout as LogoutIcon 
+} from "@mui/icons-material";
 
 function Header() {
   const { isAuthenticated, signOut, user } = useAuth();
   const navigate = useNavigate();
+  const [anchorEl, setAnchorEl] = useState(null);
+  const open = Boolean(anchorEl);
 
   const handleSignOut = async () => {
     await signOut();
     navigate("/login");
+    handleClose();
+  };
+
+  const handleProfileOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  const navigateToProfile = () => {
+    navigate("/settings");
+    // Pass state to Settings page to activate the "Your Profile" tab
+    navigate("/settings", { state: { activeTab: "Your Profile" } });
+    handleClose();
   };
 
   // Function to determine active link class
@@ -90,15 +122,46 @@ function Header() {
       <div className="user-controls">
         {isAuthenticated ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span>{user?.email}</span>
-            <Button 
-              variant="outlined" 
-              size="small" 
-              onClick={handleSignOut}
-              sx={{ ml: 1 }}
+            <IconButton 
+              onClick={handleProfileOpen}
+              size="small"
+              aria-controls={open ? 'profile-menu' : undefined}
+              aria-haspopup="true"
+              aria-expanded={open ? 'true' : undefined}
             >
-              Sign Out
-            </Button>
+              <Avatar 
+                sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}
+              >
+                {user?.email?.charAt(0).toUpperCase() || 'U'}
+              </Avatar>
+            </IconButton>
+            <Menu
+              id="profile-menu"
+              anchorEl={anchorEl}
+              open={open}
+              onClose={handleClose}
+              transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+              anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+            >
+              <MenuItem onClick={handleClose} disabled>
+                <Typography variant="body2" color="text.secondary">
+                  {user?.email}
+                </Typography>
+              </MenuItem>
+              <Divider />
+              <MenuItem onClick={navigateToProfile}>
+                <ListItemIcon>
+                  <PersonIcon fontSize="small" />
+                </ListItemIcon>
+                Your Profile
+              </MenuItem>
+              <MenuItem onClick={handleSignOut}>
+                <ListItemIcon>
+                  <LogoutIcon fontSize="small" />
+                </ListItemIcon>
+                Sign Out
+              </MenuItem>
+            </Menu>
           </div>
         ) : (
           <div className="code-icon">&lt;/&gt;</div>

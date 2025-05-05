@@ -15,7 +15,8 @@ import {
 import { 
   Person as PersonIcon, 
   Settings as SettingsIcon, 
-  Logout as LogoutIcon 
+  Logout as LogoutIcon,
+  Dashboard as DashboardIcon
 } from "@mui/icons-material";
 
 function Header() {
@@ -23,6 +24,9 @@ function Header() {
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
+  
+  // Check if user is admin - we'll treat role === 'admin' as admin user
+  const isAdmin = user?.role === 'admin';
 
   const handleSignOut = async () => {
     await signOut();
@@ -42,6 +46,11 @@ function Header() {
     navigate("/settings");
     // Pass state to Settings page to activate the "Your Profile" tab
     navigate("/settings", { state: { activeTab: "Your Profile" } });
+    handleClose();
+  };
+  
+  const navigateToDashboard = () => {
+    navigate("/admin");
     handleClose();
   };
 
@@ -149,6 +158,14 @@ function Header() {
                 </Typography>
               </MenuItem>
               <Divider />
+              {isAdmin && (
+                <MenuItem onClick={navigateToDashboard}>
+                  <ListItemIcon>
+                    <DashboardIcon fontSize="small" />
+                  </ListItemIcon>
+                  Admin Dashboard
+                </MenuItem>
+              )}
               <MenuItem onClick={navigateToProfile}>
                 <ListItemIcon>
                   <PersonIcon fontSize="small" />

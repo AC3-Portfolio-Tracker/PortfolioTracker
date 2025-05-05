@@ -15,6 +15,7 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   // Effect to handle auth state changes
   useEffect(() => {
@@ -23,10 +24,19 @@ export function AuthProvider({ children }) {
       setLoading(true);
       try {
         // Get the current session
-        const { data: { session } } = await supabaseAuth.getSession();
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          throw error;
+        }
         
         if (session?.user) {
-          setUser(session.user);
+          const { data: userData, error: userError } = await supabase.auth.getUser();
+          if (userError) throw userError;
+          
+          // Set user with role information
+          setUser(userData.user);
+          setIsAuthenticated(true);
           
           // Fetch the user profile
           const { data: profileData, error: profileError } = await profiles.getProfile(session.user.id);
@@ -36,10 +46,16 @@ export function AuthProvider({ children }) {
           } else {
             setProfile(profileData);
           }
+        } else {
+          setUser(null);
+          setIsAuthenticated(false);
+          setProfile(null);
         }
       } catch (err) {
         console.error('Error during authentication:', err);
         setError(err);
+        setUser(null);
+        setIsAuthenticated(false);
       } finally {
         setLoading(false);
       }
@@ -51,20 +67,29 @@ export function AuthProvider({ children }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'SIGNED_IN' && session?.user) {
-          setUser(session.user);
-          
-          // Fetch the user profile
-          const { data: profileData } = await profiles.getProfile(session.user.id);
-          setProfile(profileData);
+          const { data: userData, error: userError } = await supabase.auth.getUser();
+          if (!userError) {
+            setUser(userData.user);
+            setIsAuthenticated(true);
+            
+            // Fetch the user profile
+            const { data: profileData } = await profiles.getProfile(session.user.id);
+            setProfile(profileData);
+          }
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
+          setIsAuthenticated(false);
           setProfile(null);
         } else if (event === 'USER_UPDATED' && session?.user) {
-          setUser(session.user);
-          
-          // Update the profile as well
-          const { data: profileData } = await profiles.getProfile(session.user.id);
-          setProfile(profileData);
+          const { data: userData, error: userError } = await supabase.auth.getUser();
+          if (!userError) {
+            setUser(userData.user);
+            setIsAuthenticated(true);
+            
+            // Update the profile as well
+            const { data: profileData } = await profiles.getProfile(session.user.id);
+            setProfile(profileData);
+          }
         }
       }
     );
@@ -105,6 +130,7 @@ export function AuthProvider({ children }) {
       const { error } = await supabaseAuth.signOut();
       if (error) throw error;
       setUser(null);
+      setIsAuthenticated(false);
       setProfile(null);
     } catch (err) {
       setError(err);
@@ -157,7 +183,7 @@ export function AuthProvider({ children }) {
     signIn,
     signOut,
     updateProfile,
-    isAuthenticated: !!user,
+    isAuthenticated,
   };
 
   return (

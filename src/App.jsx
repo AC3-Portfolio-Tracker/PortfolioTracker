@@ -11,7 +11,9 @@ import SignUp from "./pages/Signup";
 import Holdings from "./pages/Holdings";
 import LandingPage from "./pages/LandingPage";
 import HomePage from "./pages/HomePage";
+import AdminDashboard from "./pages/AdminDashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminRoute from "./components/AdminRoute";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import PricingPage from "./pages/PricingPage";
 import FeaturesPage from "./pages/FeaturesPage";
@@ -82,6 +84,13 @@ function App() {
               <ProtectedRoute>
                 <BrokerUpload />
               </ProtectedRoute>
+            } />
+            
+            {/* Admin routes */}
+            <Route path="/admin/*" element={
+              <AdminRoute>
+                <AdminDashboard />
+              </AdminRoute>
             } />
             
             {/* Redirect any unmatched routes */}

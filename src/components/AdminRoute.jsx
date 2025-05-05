@@ -7,15 +7,16 @@ import { useAuth } from '../contexts/AuthContext';
  * This is used to protect admin-only routes
  */
 const AdminRoute = ({ children }) => {
-  const { isAuthenticated, user, loading } = useAuth();
+  const { isAuthenticated, user, profile, loading } = useAuth();
   
   // If auth is still loading, show nothing
   if (loading) {
     return null;
   }
   
-  // Check if the user is authenticated and has admin role
-  const isAdmin = isAuthenticated && user?.role === 'admin';
+  // Check if the user is authenticated and has admin privileges
+  // We're using profile.is_admin flag instead of role
+  const isAdmin = isAuthenticated && profile?.is_admin === true;
   
   // If user is not an admin, redirect to home
   if (!isAdmin) {

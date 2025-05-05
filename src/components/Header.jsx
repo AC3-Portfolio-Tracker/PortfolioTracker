@@ -20,13 +20,13 @@ import {
 } from "@mui/icons-material";
 
 function Header() {
-  const { isAuthenticated, signOut, user } = useAuth();
+  const { isAuthenticated, signOut, user, profile } = useAuth();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
   
-  // Check if user is admin - we'll treat role === 'admin' as admin user
-  const isAdmin = user?.role === 'admin';
+  // Check if user is admin based on profile.is_admin flag
+  const isAdmin = profile?.is_admin === true;
 
   const handleSignOut = async () => {
     await signOut();

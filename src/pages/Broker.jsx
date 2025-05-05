@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Typography,
   TextField,
@@ -11,11 +11,31 @@ import {
   CardContent,
   Breadcrumbs,
   Button,
+  Box,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import HomeIcon from "@mui/icons-material/Home";
+import BusinessIcon from "@mui/icons-material/Business";
+import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
+import CorporateFareIcon from "@mui/icons-material/CorporateFare";
+import { styled } from "@mui/material/styles";
+
+const StyledCard = styled(Card)(({ theme }) => ({
+  cursor: "pointer",
+  transition: "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
+  "&:hover": {
+    transform: "translateY(-5px)",
+    boxShadow: theme.shadows[8],
+  },
+}));
 
 function Broker() {
+  const navigate = useNavigate();
+
+  const handleBrokerClick = (brokerId) => {
+    navigate(`/brokers/${brokerId}`);
+  };
+
   return (
     <div className="broker-upload-page">
       <Breadcrumbs
@@ -34,19 +54,15 @@ function Broker() {
           <HomeIcon sx={{ mr: 0.5 }} fontSize="inherit" />
           Home
         </Link>
-        <Typography color="text.secondary">Add Investment</Typography>
-        <Typography color="text.primary">Upload via broker</Typography>
+        <Typography color="text.primary">Brokers</Typography>
       </Breadcrumbs>
 
       <Typography variant="h4" gutterBottom>
-        Upload via broker
+        Import from Brokers
       </Typography>
 
       <Typography variant="body1" sx={{ mb: 2, color: "text.secondary" }}>
-        Search and choose one of our supported brokers to begin.{" "}
-        <Link href="#" color="primary">
-          Learn more
-        </Link>
+        Select one of our supported brokers to import your transactions.
       </Typography>
 
       <TextField
@@ -63,8 +79,8 @@ function Broker() {
         sx={{ mb: 2 }}
       />
 
-      <div
-        style={{
+      <Box
+        sx={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
@@ -72,194 +88,138 @@ function Broker() {
           color: "text.secondary",
         }}
       >
-        <Typography variant="body2">Showing 127 of 244</Typography>
-        <div style={{ display: "flex", alignItems: "center" }}>
+        <Typography variant="body2">Showing 5 brokers</Typography>
+        <Box sx={{ display: "flex", alignItems: "center" }}>
           <Typography variant="body2" sx={{ mr: 1 }}>
             Sort by:
           </Typography>
           <Select value="az" variant="outlined" size="small">
             <MenuItem value="az">A - Z</MenuItem>
-            {/* Add other sorting options */}
+            <MenuItem value="za">Z - A</MenuItem>
           </Select>
-        </div>
-      </div>
+        </Box>
+      </Box>
 
       <Grid container spacing={2}>
+        {/* 180 Markets */}
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
+          <StyledCard onClick={() => handleBrokerClick("180markets")}>
             <CardContent
               sx={{
                 display: "flex",
+                flexDirection: "column",
                 justifyContent: "center",
                 alignItems: "center",
                 minHeight: 100,
+                padding: 3,
               }}
             >
-              <img
-                src="https://via.placeholder.com/150/ffffff/000000?Text=180MARKETS"
-                alt="180MARKETS"
-                style={{
-                  maxWidth: "100%",
-                  maxHeight: 80,
-                  objectFit: "contain",
-                }}
-              />
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent
-              sx={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                minHeight: 100,
-              }}
-            >
-              <Typography variant="h6" color="text.primary">
-                708{" "}
-                <Typography
-                  component="span"
-                  color="text.secondary"
-                  sx={{ display: "block", fontSize: "0.8rem" }}
-                >
-                  WEALTH MANAGEMENT
-                </Typography>
+              <AccountBalanceIcon sx={{ fontSize: 40, color: "primary.main", mb: 1 }} />
+              <Typography variant="h6" align="center" color="text.primary">
+                180 Markets
+              </Typography>
+              <Typography variant="body2" align="center" color="text.secondary" sx={{ mt: 1 }}>
+                Import CSV data
               </Typography>
             </CardContent>
-          </Card>
+          </StyledCard>
         </Grid>
+
+        {/* 708 Wealth Management */}
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
+          <StyledCard onClick={() => handleBrokerClick("708wealth")}>
             <CardContent
               sx={{
                 display: "flex",
+                flexDirection: "column",
                 justifyContent: "center",
                 alignItems: "center",
                 minHeight: 100,
+                padding: 3,
               }}
             >
-              <Typography variant="h6" color="text.primary">
-                <Typography component="span" color="warning">
-                  ACUMEN
-                </Typography>{" "}
-                <Typography component="span" color="text.secondary" sx={{}}>
-                  INVESTORS
-                </Typography>
+              <BusinessIcon sx={{ fontSize: 40, color: "secondary.main", mb: 1 }} />
+              <Typography variant="h6" align="center" color="text.primary">
+                708 Wealth
+              </Typography>
+              <Typography variant="body2" align="center" color="text.secondary" sx={{ mt: 1 }}>
+                Wealth Management
               </Typography>
             </CardContent>
-          </Card>
+          </StyledCard>
         </Grid>
+
+        {/* Alpine Capital */}
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
+          <StyledCard onClick={() => handleBrokerClick("alpine")}>
             <CardContent
               sx={{
                 display: "flex",
+                flexDirection: "column",
                 justifyContent: "center",
                 alignItems: "center",
                 minHeight: 100,
+                padding: 3,
               }}
             >
-              <img
-                src="https://via.placeholder.com/100/ffcc00/000000?Text=Alpaca"
-                alt="Alpaca"
-                style={{
-                  borderRadius: "50%",
-                  maxWidth: "80%",
-                  maxHeight: 80,
-                  objectFit: "contain",
-                }}
-              />
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent
-              sx={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                minHeight: 100,
-              }}
-            >
-              <img
-                src="https://via.placeholder.com/120/f0ad4e/ffffff?Text=ALPINE%20CAPITAL&style=round"
-                alt="ALPINE CAPITAL"
-                style={{
-                  borderRadius: "5px",
-                  maxWidth: "90%",
-                  maxHeight: 80,
-                  objectFit: "contain",
-                }}
-              />
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent
-              sx={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                minHeight: 100,
-              }}
-            >
-              <Typography variant="h6" color="text.primary">
-                ALTO{" "}
-                <Typography
-                  component="span"
-                  color="text.secondary"
-                  sx={{ display: "block", fontSize: "0.8rem" }}
-                >
-                  CAPITAL
-                </Typography>
+              <CorporateFareIcon sx={{ fontSize: 40, color: "info.main", mb: 1 }} />
+              <Typography variant="h6" align="center" color="text.primary">
+                Alpine Capital
+              </Typography>
+              <Typography variant="body2" align="center" color="text.secondary" sx={{ mt: 1 }}>
+                Investment Services
               </Typography>
             </CardContent>
-          </Card>
+          </StyledCard>
         </Grid>
+
+        {/* ASR Wealth Advisers */}
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
+          <StyledCard onClick={() => handleBrokerClick("asr")}>
             <CardContent
               sx={{
                 display: "flex",
+                flexDirection: "column",
                 justifyContent: "center",
                 alignItems: "center",
                 minHeight: 100,
+                padding: 3,
               }}
             >
-              <Typography variant="h6" style={{ color: "#a94442" }}>
-                Amscot
+              <BusinessIcon sx={{ fontSize: 40, color: "success.main", mb: 1 }} />
+              <Typography variant="h6" align="center" color="text.primary">
+                ASR Wealth
+              </Typography>
+              <Typography variant="body2" align="center" color="text.secondary" sx={{ mt: 1 }}>
+                Wealth Advisers
               </Typography>
             </CardContent>
-          </Card>
+          </StyledCard>
         </Grid>
+
+        {/* HSBC */}
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
+          <StyledCard onClick={() => handleBrokerClick("hsbc")}>
             <CardContent
               sx={{
                 display: "flex",
+                flexDirection: "column",
                 justifyContent: "center",
                 alignItems: "center",
                 minHeight: 100,
+                padding: 3,
               }}
             >
-              <Typography variant="h6" style={{ color: "#007bff" }}>
-                ANZ{" "}
-                <Typography
-                  component="span"
-                  color="text.secondary"
-                  sx={{ display: "block", fontSize: "0.7rem" }}
-                >
-                  Share Investing
-                </Typography>
+              <AccountBalanceIcon sx={{ fontSize: 40, color: "error.main", mb: 1 }} />
+              <Typography variant="h6" align="center" color="text.primary">
+                HSBC
+              </Typography>
+              <Typography variant="body2" align="center" color="text.secondary" sx={{ mt: 1 }}>
+                Australia
               </Typography>
             </CardContent>
-          </Card>
+          </StyledCard>
         </Grid>
-        {/* Add more broker cards here */}
       </Grid>
     </div>
   );

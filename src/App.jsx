@@ -5,6 +5,7 @@ import Performance from "./pages/Performance";
 import ActivitiesPage from "./pages/ActivitiesPage";
 import Settings from "./pages/Settings";
 import Broker from "./pages/Broker";
+import BrokerUpload from "./pages/BrokerUpload";
 import Login from "./pages/Login";
 import SignUp from "./pages/Signup";
 import Holdings from "./pages/Holdings";
@@ -74,6 +75,12 @@ function App() {
             <Route path="/brokers" element={
               <ProtectedRoute>
                 <Broker />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/brokers/:brokerId" element={
+              <ProtectedRoute>
+                <BrokerUpload />
               </ProtectedRoute>
             } />
             

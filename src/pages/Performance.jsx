@@ -1,70 +1,37 @@
 import React from "react";
-import TimeFilters from "./TimeFilters";
-import Dropdowns from "./Dropdowns";
-import ModeToggle from "./ModeToggle";
 import PerformanceChart from "./PerformanceChart";
 import AssetsTable from "./AssetsTable";
 import "../components/Performance.css";
 
 const Performance = () => {
   return (
-    <div>
-      <div className="performance-container">
-        {/* Top Navbar */}
-        <div className="navbar">
-          <div className="navbar-title">Your Portfolio</div>
-          <div className="navbar-right">
-            <div className="portfolio-value">
-              <p className="portfolio-label">Current Portfolio Value</p>
-              <p className="portfolio-amount">$0.00</p>
-            </div>
-            <div className="account-info">Account ▾</div>
-          </div>
+    <div className="performance-container">
+      {/* Page Heading */}
+      <h2 className="performance-heading">Your Portfolio</h2>
+
+      {/* Page Content Wrapper */}
+      <div className="content-wrapper">
+        {/* Filters Section */}
+        <div className="filters-section">
+          <select className="simple-dropdown">
+            <option>In the last 5 years</option>
+            <option>In the last 3 years</option>
+            <option>In the last year</option>
+            <option>In the last 6 months</option>
+            <option>In the last month</option>
+          </select>
         </div>
 
-        {/* Page Content Wrapper */}
-        <div className="content-wrapper">
-          {/* Filters Section */}
-          <div className="filters-section">
-            {/* <TimeFilters /> */}
-            <Dropdowns />
-          </div>
+        {/* Performance Chart Card */}
+        <div className="chart-card">
+          <PerformanceChart />
+        </div>
 
-          {/* Toggles Section */}
-          <div className="toggles-section">
-            <div className="toggle-card">
-              <span className="toggle-label">Open & Closed Positions</span>
-              <ModeToggle />
-            </div>
-            <div className="toggle-card">
-              <span className="toggle-label">Percentage Gains</span>
-              <ModeToggle />
-            </div>
-          </div>
-
-          {/* Performance Chart Card */}
-          <div className="chart-card">
-            <PerformanceChart />
-          </div>
-
-          {/* Assets Table Card */}
-          <div className="assets-table-card">
-            <AssetsTable />
-          </div>
+        {/* Assets Table Card */}
+        <div className="assets-table-card">
+          <AssetsTable />
         </div>
       </div>
-      <footer className="footer">
-        <div className="footer-content">
-          <p>
-            &copy; {new Date().getFullYear()} PortfolioTracker. All rights reserved.
-          </p>
-          <div className="footer-links">
-            <a href="/privacy">Privacy Policy</a>
-            <a href="/terms">Terms of Service</a>
-            <a href="/contact">Contact Us</a>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 };

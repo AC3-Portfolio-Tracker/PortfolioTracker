@@ -3,12 +3,13 @@ import "./App.css";
 import Header from "./components/Header";
 import Performance from "./pages/Performance";
 import ActivitiesPage from "./pages/ActivitiesPage";
-import WelcomeSection from "./components/WelcomeSection";
 import Settings from "./pages/Settings";
 import Broker from "./pages/Broker";
 import Login from "./pages/Login";
 import SignUp from "./pages/Signup";
 import Holdings from "./pages/Holdings";
+import LandingPage from "./pages/LandingPage";
+import HomePage from "./pages/HomePage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import PricingPage from "./pages/PricingPage";
@@ -25,13 +26,18 @@ function App() {
         <div className="content">
           <Routes>
             {/* Public routes */}
-            <Route path="/login" element={isAuthenticated ? <Navigate to="/" /> : <Login />} />
-            <Route path="/signup" element={isAuthenticated ? <Navigate to="/" /> : <SignUp />} />
+            <Route path="/login" element={isAuthenticated ? <Navigate to="/home" /> : <Login />} />
+            <Route path="/signup" element={isAuthenticated ? <Navigate to="/home" /> : <SignUp />} />
+            <Route path="/pricing" element={<PricingPage />} />
+            <Route path="/features" element={<FeaturesPage />} />
+            
+            {/* Landing page (only for non-authenticated users) */}
+            <Route path="/" element={isAuthenticated ? <Navigate to="/home" /> : <LandingPage />} />
             
             {/* Protected routes */}
-            <Route path="/" element={
+            <Route path="/home" element={
               <ProtectedRoute>
-                <WelcomeSection />
+                <HomePage />
               </ProtectedRoute>
             } />
             
@@ -46,8 +52,6 @@ function App() {
                 <Performance />
               </ProtectedRoute>
             } />
-            <Route path="/pricing" element={<PricingPage />} />
-            <Route path="/features" element={<FeaturesPage />} />
             
             <Route path="/income" element={
               <ProtectedRoute>
@@ -74,7 +78,7 @@ function App() {
             } />
             
             {/* Redirect any unmatched routes */}
-            <Route path="*" element={<Navigate to="/" />} />
+            <Route path="*" element={<Navigate to={isAuthenticated ? "/home" : "/"} />} />
           </Routes>
         </div>
       </div>

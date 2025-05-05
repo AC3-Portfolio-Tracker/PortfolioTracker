@@ -1,6 +1,6 @@
 import React from "react";
 import "./Header.css";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { Button } from "@mui/material";
 
@@ -13,6 +13,9 @@ function Header() {
     navigate("/login");
   };
 
+  // Function to determine active link class
+  const getLinkClass = ({ isActive }) => isActive ? "active" : "";
+
   return (
     <header className="header">
       <div className="logo">
@@ -24,63 +27,62 @@ function Header() {
         {isAuthenticated ? (
           <ul>
             <li>
-              <Link to="/" activeClassName="active">
+              <NavLink to="/home" className={getLinkClass}>
                 Home
-              </Link>
+              </NavLink>
             </li>
             <li>
-              <Link to="/brokers" activeClassName="active">
+              <NavLink to="/brokers" className={getLinkClass}>
                 Brokers
-              </Link>
+              </NavLink>
             </li>
             <li>
-              <Link to="/holdings" activeClassName="active">
+              <NavLink to="/holdings" className={getLinkClass}>
                 Holdings
-              </Link>
+              </NavLink>
             </li>
             <li>
-              <Link to="/performance" activeClassName="active">
+              <NavLink to="/performance" className={getLinkClass}>
                 Performance
-              </Link>
+              </NavLink>
             </li>
             <li>
-            <Link to="/pricing" activeClassName="active">
-              Pricing
-            </Link>
-          </li>
-          <li>
-            <Link to="/features" activeClassName="active">
-              Features
-            </Link>
-          </li>
-
+              <NavLink to="/pricing" className={getLinkClass}>
+                Pricing
+              </NavLink>
+            </li>
             <li>
-              <Link to="/income" activeClassName="active">
+              <NavLink to="/features" className={getLinkClass}>
+                Features
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/income" className={getLinkClass}>
                 Income
-              </Link>
+              </NavLink>
             </li>
             <li>
-              <Link to="/activities" activeClassName="active">
+              <NavLink to="/activities" className={getLinkClass}>
                 Activities
-              </Link>
+              </NavLink>
             </li>
             <li>
-              <Link to="/settings" activeClassName="active">
+              <NavLink to="/settings" className={getLinkClass}>
                 Settings
-              </Link>
+              </NavLink>
             </li>
           </ul>
         ) : (
           <ul>
             <li>
-              <Link to="/login" activeClassName="active">
+              <NavLink to="/login" className={getLinkClass}>
                 Login
-              </Link>
+              </NavLink>
             </li>
             <li>
-              <Link to="/signup" activeClassName="active">
+              <NavLink to="/signup" className={getLinkClass}>
                 Sign Up
-              </Link>
+              </NavLink>
             </li>
           </ul>
         )}

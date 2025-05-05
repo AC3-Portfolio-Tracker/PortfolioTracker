@@ -2,21 +2,21 @@ import React, { useState } from "react";
 import "./Header.css";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { 
-  Button, 
-  Menu, 
-  MenuItem, 
-  Avatar, 
-  Divider, 
-  ListItemIcon, 
+import {
+  Button,
+  Menu,
+  MenuItem,
+  Avatar,
+  Divider,
+  ListItemIcon,
   IconButton,
-  Typography
+  Typography,
 } from "@mui/material";
-import { 
-  Person as PersonIcon, 
-  Settings as SettingsIcon, 
+import {
+  Person as PersonIcon,
+  Settings as SettingsIcon,
   Logout as LogoutIcon,
-  Dashboard as DashboardIcon
+  Dashboard as DashboardIcon,
 } from "@mui/icons-material";
 
 function Header() {
@@ -24,7 +24,7 @@ function Header() {
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
-  
+
   // Check if user is admin based on profile.is_admin flag
   const isAdmin = profile?.is_admin === true;
 
@@ -48,14 +48,14 @@ function Header() {
     navigate("/settings", { state: { activeTab: "Your Profile" } });
     handleClose();
   };
-  
+
   const navigateToDashboard = () => {
     navigate("/admin");
     handleClose();
   };
 
   // Function to determine active link class
-  const getLinkClass = ({ isActive }) => isActive ? "active" : "";
+  const getLinkClass = ({ isActive }) => (isActive ? "active" : "");
 
   return (
     <header className="header">
@@ -97,7 +97,7 @@ function Header() {
                 Features
               </NavLink>
             </li>
-            <li>
+            {/* <li>
               <NavLink to="/income" className={getLinkClass}>
                 Income
               </NavLink>
@@ -106,7 +106,7 @@ function Header() {
               <NavLink to="/activities" className={getLinkClass}>
                 Activities
               </NavLink>
-            </li>
+            </li> */}
             <li>
               <NavLink to="/settings" className={getLinkClass}>
                 Settings
@@ -130,18 +130,16 @@ function Header() {
       </nav>
       <div className="user-controls">
         {isAuthenticated ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <IconButton 
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <IconButton
               onClick={handleProfileOpen}
               size="small"
-              aria-controls={open ? 'profile-menu' : undefined}
+              aria-controls={open ? "profile-menu" : undefined}
               aria-haspopup="true"
-              aria-expanded={open ? 'true' : undefined}
+              aria-expanded={open ? "true" : undefined}
             >
-              <Avatar 
-                sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}
-              >
-                {user?.email?.charAt(0).toUpperCase() || 'U'}
+              <Avatar sx={{ width: 32, height: 32, bgcolor: "primary.main" }}>
+                {user?.email?.charAt(0).toUpperCase() || "U"}
               </Avatar>
             </IconButton>
             <Menu
@@ -149,8 +147,8 @@ function Header() {
               anchorEl={anchorEl}
               open={open}
               onClose={handleClose}
-              transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-              anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+              transformOrigin={{ horizontal: "right", vertical: "top" }}
+              anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
             >
               <MenuItem onClick={handleClose} disabled>
                 <Typography variant="body2" color="text.secondary">

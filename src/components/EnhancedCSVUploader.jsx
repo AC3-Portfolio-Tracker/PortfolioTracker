@@ -17,6 +17,10 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import {
   Upload as UploadIcon,
@@ -50,6 +54,16 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   },
 }));
 
+// Map of broker templates
+const brokerTemplates = {
+  "sharesight": "Sharesight Format",
+  "180markets": "180 Markets",
+  "708wealth": "708 Wealth Management",
+  "alpine": "Alpine Capital",
+  "asr": "ASR Wealth Advisers",
+  "hsbc": "HSBC Australia"
+};
+
 const EnhancedCSVUploader = ({ onUploadComplete }) => {
   const [file, setFile] = useState(null);
   const [parsedData, setParsedData] = useState([]);
@@ -57,6 +71,11 @@ const EnhancedCSVUploader = ({ onUploadComplete }) => {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState("idle"); // idle, validating, success, error
+  const [selectedBroker, setSelectedBroker] = useState("sharesight");
+
+  const handleBrokerChange = (event) => {
+    setSelectedBroker(event.target.value);
+  };
 
   const handleFileSelect = (event) => {
     const selectedFile = event.target.files[0];
@@ -78,41 +97,126 @@ const EnhancedCSVUploader = ({ onUploadComplete }) => {
           return;
         }
 
-        // Validate the CSV format
-        const requiredColumns = ["Transaction Type", "Date", "Market", "Code", "Quantity", "Price", "Currency"];
-        const missingColumns = requiredColumns.filter(
-          (col) => !results.meta.fields.includes(col)
-        );
-
-        if (missingColumns.length > 0) {
-          setError(
-            `CSV is missing required columns: ${missingColumns.join(", ")}`
-          );
+        try {
+          // Process the data based on broker format
+          const processedData = processBrokerData(results.data, selectedBroker);
+          setParsedData(processedData);
+          setPreview(processedData.slice(0, 5)); // Show first 5 rows
+          setUploadStatus("success");
+        } catch (err) {
+          setError(err.message);
           setUploadStatus("error");
+        } finally {
           setLoading(false);
-          return;
         }
-
-        // Process the data
-        const processed = results.data.map((row) => ({
-          transactionType: row["Transaction Type"],
-          date: row.Date,
-          market: row.Market,
-          code: row.Code,
-          quantity: row.Quantity ? parseFloat(row.Quantity) : null,
-          price: row.Price ? parseFloat(row.Price) : null,
-          brokerage: row.Brokerage ? parseFloat(row.Brokerage) : null,
-          currency: row.Currency,
-          exchangeRate: row["Exchange Rate"] ? parseFloat(row["Exchange Rate"]) : null,
-          comment: row.Comment || "",
-        }));
-
-        setParsedData(processed);
-        setPreview(processed.slice(0, 5)); // Show first 5 rows
-        setUploadStatus("success");
-        setLoading(false);
       },
     });
+  };
+
+  // Process different broker CSV formats
+  const processBrokerData = (data, broker) => {
+    // Check if data is empty
+    if (!data || data.length === 0) {
+      throw new Error("CSV file is empty or improperly formatted");
+    }
+
+    // Get field names from first row
+    const fields = Object.keys(data[0]);
+
+    // Handle different broker formats
+    if (broker === "hsbc") {
+      // HSBC format
+      if (!fields.includes("Stock Code") || !fields.includes("Transaction Type")) {
+        throw new Error("This doesn't appear to be a valid HSBC CSV format");
+      }
+
+      return data.map((row) => ({
+        transactionType: mapTransactionType(row["Transaction Type"]),
+        date: formatDate(row["Transaction Date"]),
+        market: "ASX", // Assuming ASX for HSBC Australia
+        code: row["Stock Code"],
+        quantity: parseNumber(row["Quantity"]),
+        price: parseNumber(row["Price per Share"]),
+        brokerage: parseNumber(row["Brokerage"]),
+        currency: "AUD", // Assuming AUD for HSBC Australia
+        exchangeRate: 1.0,
+        comment: row["Comments"] || "",
+      }));
+    } else if (broker === "sharesight") {
+      // Sharesight format
+      const requiredColumns = ["Transaction Type", "Date", "Market", "Code", "Quantity", "Price", "Currency"];
+      const missingColumns = requiredColumns.filter(
+        (col) => !fields.includes(col)
+      );
+
+      if (missingColumns.length > 0) {
+        throw new Error(`CSV is missing required Sharesight columns: ${missingColumns.join(", ")}`);
+      }
+
+      return data.map((row) => ({
+        transactionType: row["Transaction Type"],
+        date: row.Date,
+        market: row.Market,
+        code: row.Code,
+        quantity: parseNumber(row.Quantity),
+        price: parseNumber(row.Price),
+        brokerage: parseNumber(row.Brokerage),
+        currency: row.Currency,
+        exchangeRate: parseNumber(row["Exchange Rate"] || "1.0"),
+        comment: row.Comment || "",
+      }));
+    } else {
+      // Standard format for other brokers (180markets, 708wealth, alpine, asr, etc.)
+      if (!fields.includes("Code") || !fields.includes("Type")) {
+        throw new Error(`This doesn't appear to be a valid ${brokerTemplates[broker]} CSV format`);
+      }
+
+      return data.map((row) => ({
+        transactionType: mapTransactionType(row["Type"]),
+        date: row["Date"],
+        market: row["Market Code"],
+        code: row["Code"],
+        quantity: parseNumber(row["Quantity"]),
+        price: parseNumber(row["Price"]),
+        brokerage: parseNumber(row["Brokerage"]),
+        currency: row["Instrument Currency"],
+        exchangeRate: parseNumber(row["Exchange Rate"] || "1.0"),
+        comment: row["Comments"] || "",
+      }));
+    }
+  };
+
+  // Helper to standardize transaction types
+  const mapTransactionType = (type) => {
+    if (!type) return "Buy"; // Default to Buy if no type specified
+    
+    type = type.toLowerCase();
+    if (type.includes("buy") || type === "purchase") return "Buy";
+    if (type.includes("sell") || type === "sale") return "Sell";
+    if (type.includes("div")) return "Dividend";
+    return type.charAt(0).toUpperCase() + type.slice(1); // Capitalize first letter
+  };
+
+  // Helper to format dates to YYYY-MM-DD
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "";
+    
+    // Check for DD/MM/YYYY format
+    if (dateStr.includes("/")) {
+      const parts = dateStr.split("/");
+      if (parts.length === 3) {
+        // Assuming DD/MM/YYYY format
+        return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+      }
+    }
+    
+    return dateStr; // Return as is if already in YYYY-MM-DD format
+  };
+
+  // Helper to parse numbers
+  const parseNumber = (value) => {
+    if (!value || value === "") return null;
+    return parseFloat(value.toString().replace(/,/g, ''));
   };
 
   const saveToDatabase = async () => {
@@ -127,6 +231,36 @@ const EnhancedCSVUploader = ({ onUploadComplete }) => {
       
       if (!user) {
         throw new Error("You must be logged in to upload data");
+      }
+
+      // Get or create the broker
+      const { data: brokerData, error: brokerError } = await supabase
+        .from("brokers")
+        .select("id")
+        .eq("name", brokerTemplates[selectedBroker])
+        .single();
+
+      let brokerId;
+
+      if (brokerError || !brokerData) {
+        // Create the broker
+        const { data: newBroker, error: createBrokerError } = await supabase
+          .from("brokers")
+          .insert({
+            user_id: user.id,
+            name: brokerTemplates[selectedBroker],
+            description: `${brokerTemplates[selectedBroker]} broker account`,
+          })
+          .select("id")
+          .single();
+
+        if (createBrokerError) {
+          throw new Error(`Error creating broker: ${createBrokerError.message}`);
+        }
+        
+        brokerId = newBroker.id;
+      } else {
+        brokerId = brokerData.id;
       }
 
       // Process each transaction
@@ -170,6 +304,7 @@ const EnhancedCSVUploader = ({ onUploadComplete }) => {
           .insert({
             user_id: user.id,
             security_id: securityId,
+            broker_id: brokerId,
             type: transaction.transactionType,
             date: transaction.date,
             quantity: transaction.quantity,
@@ -215,6 +350,24 @@ const EnhancedCSVUploader = ({ onUploadComplete }) => {
           Import Transactions
         </Typography>
 
+        {/* Broker template selector */}
+        {uploadStatus === "idle" && (
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <InputLabel id="broker-template-label">Select CSV Format</InputLabel>
+            <Select
+              labelId="broker-template-label"
+              id="broker-template"
+              value={selectedBroker}
+              label="Select CSV Format"
+              onChange={handleBrokerChange}
+            >
+              {Object.entries(brokerTemplates).map(([key, name]) => (
+                <MenuItem key={key} value={key}>{name}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        )}
+
         {/* File upload area */}
         {uploadStatus === "idle" && (
           <Box
@@ -233,7 +386,7 @@ const EnhancedCSVUploader = ({ onUploadComplete }) => {
               Drag & Drop or Select CSV File
             </Typography>
             <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 3 }}>
-              Upload a CSV file in Sharesight format to import your transactions
+              Upload a CSV file in {brokerTemplates[selectedBroker]} format
             </Typography>
             <Button
               component="label"

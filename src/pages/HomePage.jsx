@@ -431,9 +431,16 @@ const HomePage = () => {
             Import Transactions
           </Typography>
           <Typography variant="body1" paragraph>
-            Upload a CSV file in Sharesight format to import your transactions. The file should
-            include the following columns: Transaction Type, Date, Market, Code, Quantity, Price,
-            Currency.
+            Upload a CSV file to import your transactions. We support multiple broker formats including:
+            <ul>
+              <li>Sharesight Format</li>
+              <li>180 Markets</li>
+              <li>708 Wealth Management</li>
+              <li>Alpine Capital</li>
+              <li>ASR Wealth Advisers</li>
+              <li>HSBC Australia</li>
+            </ul>
+            Select your broker format from the dropdown and upload your CSV file.
           </Typography>
           <EnhancedCSVUploader onUploadComplete={handleUploadComplete} />
         </>

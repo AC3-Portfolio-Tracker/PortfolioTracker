@@ -12,8 +12,13 @@ import {
   Alert,
   Snackbar,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle
 } from "@mui/material";
-import { Add, UploadFile, Refresh } from "@mui/icons-material";
+import { Add, UploadFile, Refresh, DeleteOutline } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import EnhancedCSVUploader from "../components/EnhancedCSVUploader";
 import { supabase } from "../lib/supabase";
@@ -42,6 +47,8 @@ const HomePage = () => {
     message: "",
     severity: "success",
   });
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
@@ -255,6 +262,52 @@ const HomePage = () => {
     });
   };
 
+  // Handle confirmation dialog opening
+  const handleOpenDeleteDialog = () => {
+    setDeleteDialogOpen(true);
+  };
+
+  // Handle confirmation dialog closing
+  const handleCloseDeleteDialog = () => {
+    setDeleteDialogOpen(false);
+  };
+
+  // Handle delete all data
+  const handleDeleteAllData = async () => {
+    setIsDeleting(true);
+    try {
+      // Get the current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // Delete all activities for the current user
+      const { error } = await supabase
+        .from("activities")
+        .delete()
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+      
+      setNotification({
+        open: true,
+        message: "Successfully deleted all your transaction data",
+        severity: "success",
+      });
+      
+      // Clear the transactions list
+      setTransactions([]);
+    } catch (error) {
+      console.error("Error deleting all data:", error);
+      setNotification({
+        open: true,
+        message: `Error deleting data: ${error.message}`,
+        severity: "error",
+      });
+    } finally {
+      setIsDeleting(false);
+      setDeleteDialogOpen(false);
+    }
+  };
+
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 8 }}>
       <Typography
@@ -291,6 +344,18 @@ const HomePage = () => {
               >
                 Refresh
               </Button>
+              {transactions.length > 0 && (
+                <Button
+                  variant="outlined"
+                  color="error"
+                  startIcon={<DeleteOutline />}
+                  onClick={handleOpenDeleteDialog}
+                  sx={{ mr: 2 }}
+                  disabled={isDeleting}
+                >
+                  Delete All
+                </Button>
+              )}
               <Button
                 variant="contained"
                 startIcon={<Add />}
@@ -373,6 +438,38 @@ const HomePage = () => {
           <EnhancedCSVUploader onUploadComplete={handleUploadComplete} />
         </>
       )}
+
+      {/* Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleCloseDeleteDialog}
+      >
+        <DialogTitle>
+          Delete All Transaction Data
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete ALL of your transaction data? This will remove all transactions across all brokers and cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={handleCloseDeleteDialog} 
+            color="primary"
+            disabled={isDeleting}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleDeleteAllData} 
+            color="error" 
+            variant="contained"
+            disabled={isDeleting}
+          >
+            {isDeleting ? "Deleting..." : "Delete Everything"}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Notification Snackbar */}
       <Snackbar

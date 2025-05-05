@@ -11,8 +11,13 @@ import {
   Snackbar,
   Alert,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle
 } from "@mui/material";
-import { ArrowBack, HomeOutlined } from "@mui/icons-material";
+import { ArrowBack, HomeOutlined, DeleteOutline } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import BrokerCSVUploader from "../components/BrokerCSVUploader";
 import { supabase } from "../lib/supabase";
@@ -48,6 +53,8 @@ const BrokerUpload = () => {
     message: "",
     severity: "success",
   });
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   // Get broker display name
   const brokerName = brokerNameMap[brokerId] || brokerId;
@@ -114,6 +121,60 @@ const BrokerUpload = () => {
       });
     } finally {
       setIsLoadingTransactions(false);
+    }
+  };
+
+  // Handle confirmation dialog opening
+  const handleOpenDeleteDialog = () => {
+    setDeleteDialogOpen(true);
+  };
+
+  // Handle confirmation dialog closing
+  const handleCloseDeleteDialog = () => {
+    setDeleteDialogOpen(false);
+  };
+
+  // Handle delete all broker data
+  const handleDeleteAllBrokerData = async () => {
+    setIsDeleting(true);
+    try {
+      // First get the broker ID
+      const { data: brokerData, error: brokerError } = await supabase
+        .from("brokers")
+        .select("id")
+        .ilike("name", `%${brokerName}%`)
+        .single();
+      
+      if (brokerError) {
+        throw brokerError;
+      }
+
+      // Delete all activities associated with this broker
+      const { error: deleteError } = await supabase
+        .from("activities")
+        .delete()
+        .eq("broker_id", brokerData.id);
+
+      if (deleteError) throw deleteError;
+      
+      setNotification({
+        open: true,
+        message: `Successfully deleted all transactions from ${brokerName}`,
+        severity: "success",
+      });
+      
+      // Refresh the transactions list
+      setTransactions([]);
+    } catch (error) {
+      console.error("Error deleting broker data:", error);
+      setNotification({
+        open: true,
+        message: `Error deleting transactions: ${error.message}`,
+        severity: "error",
+      });
+    } finally {
+      setIsDeleting(false);
+      setDeleteDialogOpen(false);
     }
   };
 
@@ -219,9 +280,23 @@ const BrokerUpload = () => {
         />
       </StyledPaper>
 
-      <Typography variant="h5" component="h2" gutterBottom>
-        Existing Transactions
-      </Typography>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+        <Typography variant="h5" component="h2" gutterBottom>
+          Existing Transactions
+        </Typography>
+        
+        {transactions.length > 0 && (
+          <Button
+            variant="outlined"
+            color="error"
+            startIcon={<DeleteOutline />}
+            onClick={handleOpenDeleteDialog}
+            disabled={isDeleting}
+          >
+            Delete All {brokerName} Data
+          </Button>
+        )}
+      </Box>
 
       <StyledPaper>
         {isLoadingTransactions ? (
@@ -251,6 +326,38 @@ const BrokerUpload = () => {
           </Box>
         )}
       </StyledPaper>
+
+      {/* Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleCloseDeleteDialog}
+      >
+        <DialogTitle>
+          Delete All {brokerName} Data
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete all transactions from {brokerName}? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={handleCloseDeleteDialog} 
+            color="primary"
+            disabled={isDeleting}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleDeleteAllBrokerData} 
+            color="error" 
+            variant="contained"
+            disabled={isDeleting}
+          >
+            {isDeleting ? "Deleting..." : "Delete All"}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Notification Snackbar */}
       <Snackbar

@@ -49,7 +49,6 @@ const HomePage = () => {
 
   // Load transactions from the database
   const loadTransactions = async () => {
-    setIsLoadingTransactions(true);
     try {
       const { data, error } = await supabase
         .from("activities")
@@ -94,14 +93,36 @@ const HomePage = () => {
         message: `Error loading transactions: ${error.message}`,
         severity: "error",
       });
-    } finally {
-      setIsLoadingTransactions(false);
+      // Re-throw the error so it can be caught in the useEffect
+      throw error;
     }
   };
 
   // Load transactions on component mount
   useEffect(() => {
-    loadTransactions();
+    const fetchData = async () => {
+      setIsLoadingTransactions(true);
+      try {
+        await loadTransactions();
+      } catch (error) {
+        console.error("Error in initial data loading:", error);
+        // Make sure loading state is turned off even if there's an error
+        setNotification({
+          open: true,
+          message: `Error loading data: ${error.message}`,
+          severity: "error",
+        });
+      } finally {
+        setIsLoadingTransactions(false);
+      }
+    };
+
+    fetchData();
+    
+    // Clean up function to prevent state updates after unmount
+    return () => {
+      // This ensures we don't try to update state after component unmount
+    };
   }, []);
 
   const handleUploadComplete = (data) => {

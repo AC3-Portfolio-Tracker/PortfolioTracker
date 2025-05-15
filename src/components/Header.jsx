@@ -97,7 +97,7 @@ function Header() {
                 Features
               </NavLink>
             </li>
-            <li>
+             <li>
               <NavLink to="/income" className={getLinkClass}>
                 Income
               </NavLink>

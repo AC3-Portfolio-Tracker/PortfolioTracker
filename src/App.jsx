@@ -19,6 +19,10 @@ import PricingPage from "./pages/PricingPage";
 import FeaturesPage from "./pages/FeaturesPage";
 import { useAuth } from "./contexts/AuthContext";
 
+import Reports from "./pages/Reports";
+import ReportRoutes from "./pages/ReportRoutes";
+
+
 function App() {
   const { isAuthenticated } = useAuth();
 
@@ -85,6 +89,19 @@ function App() {
                 <BrokerUpload />
               </ProtectedRoute>
             } />
+
+<Route path="/reports" element={
+  <ProtectedRoute>
+    <Reports />
+  </ProtectedRoute>
+} />
+
+<Route path="/reports/*" element={
+  <ProtectedRoute>
+    <ReportRoutes />
+  </ProtectedRoute>
+} />
+
             
             {/* Admin routes */}
             <Route path="/admin/*" element={

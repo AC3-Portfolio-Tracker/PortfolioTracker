@@ -5,9 +5,12 @@ import LimitsSettings from "./LimitsSettings";
 import GoalsSettings from "./GoalsSettings";
 import DataExportSettings from "./DataExportSettings";
 import { useAuth } from "../contexts/AuthContext";
+import { useTheme } from "../contexts/ThemeContext";
 import { settings } from "../lib/supabase";
-import { TextField, MenuItem, Button, Alert, CircularProgress } from "@mui/material";
+import { TextField, MenuItem, Button, Alert, CircularProgress, Switch, FormControlLabel } from "@mui/material";
 import { useLocation } from "react-router-dom";
+import Brightness4Icon from '@mui/icons-material/Brightness4';
+import Brightness7Icon from '@mui/icons-material/Brightness7';
 
 function SettingsPage() {
   const location = useLocation();
@@ -35,6 +38,7 @@ function SettingsPage() {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const { user } = useAuth();
+  const { mode, setThemeMode } = useTheme();
 
   useEffect(() => {
     // Check if we have a specific tab to activate from navigation state
@@ -69,6 +73,14 @@ function SettingsPage() {
 
     fetchSettings();
   }, [user]);
+
+  // Set the theme from localStorage when component mounts
+  useEffect(() => {
+    setUserSettings(prev => ({
+      ...prev,
+      theme: mode
+    }));
+  }, [mode]);
 
   const handleTabClick = (tab) => {
     setActiveTab(tab);
@@ -145,6 +157,13 @@ function SettingsPage() {
       ...userSettings,
       theme
     });
+    // Update the global theme
+    setThemeMode(theme);
+  };
+
+  const handleThemeToggle = (event) => {
+    const newTheme = event.target.checked ? 'dark' : 'light';
+    handleThemeChange(newTheme);
   };
 
   // Function to share with child components
@@ -369,9 +388,36 @@ function SettingsPage() {
                 <h3>Theme Settings</h3>
                 <p>Choose your preferred application theme.</p>
                 
+                <div className="theme-toggle-option">
+                  <FormControlLabel
+                    control={
+                      <Switch 
+                        checked={mode === 'dark'}
+                        onChange={handleThemeToggle}
+                        color="primary"
+                      />
+                    }
+                    label={
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        {mode === 'dark' ? (
+                          <>
+                            <Brightness4Icon sx={{ mr: 1 }} />
+                            Dark Mode
+                          </>
+                        ) : (
+                          <>
+                            <Brightness7Icon sx={{ mr: 1 }} />
+                            Light Mode
+                          </>
+                        )}
+                      </div>
+                    }
+                  />
+                </div>
+                
                 <div className="theme-options">
                   <div 
-                    className={`theme-option ${userSettings.theme === 'light' ? 'selected' : ''}`}
+                    className={`theme-option ${mode === 'light' ? 'selected' : ''}`}
                     onClick={() => handleThemeChange('light')}
                   >
                     <div className="theme-preview light-theme"></div>
@@ -379,7 +425,7 @@ function SettingsPage() {
                   </div>
                   
                   <div 
-                    className={`theme-option ${userSettings.theme === 'dark' ? 'selected' : ''}`}
+                    className={`theme-option ${mode === 'dark' ? 'selected' : ''}`}
                     onClick={() => handleThemeChange('dark')}
                   >
                     <div className="theme-preview dark-theme"></div>

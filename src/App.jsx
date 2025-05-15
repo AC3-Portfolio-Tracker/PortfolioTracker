@@ -1,5 +1,6 @@
 import React from "react";
 import "./App.css";
+import { CssBaseline } from "@mui/material";
 import Header from "./components/Header";
 import Performance from "./pages/Performance";
 import ActivitiesPage from "./pages/ActivitiesPage";
@@ -18,6 +19,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import PricingPage from "./pages/PricingPage";
 import FeaturesPage from "./pages/FeaturesPage";
 import { useAuth } from "./contexts/AuthContext";
+import { useTheme } from "./contexts/ThemeContext";
 
 import Reports from "./pages/Reports";
 import ReportRoutes from "./pages/ReportRoutes";
@@ -25,10 +27,12 @@ import ReportRoutes from "./pages/ReportRoutes";
 
 function App() {
   const { isAuthenticated } = useAuth();
+  const { mode } = useTheme();
 
   return (
     <Router>
-      <div className="app">
+      <CssBaseline />
+      <div className={`app ${mode}-mode`}>
         <Header />
         <div className="content">
           <Routes>

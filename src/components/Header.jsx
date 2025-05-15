@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import "./Header.css";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import ThemeToggle from "./ThemeToggle";
 import { 
   Button, 
   Menu, 
@@ -129,6 +130,7 @@ function Header() {
         )}
       </nav>
       <div className="user-controls">
+        <ThemeToggle />
         {isAuthenticated ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <IconButton 

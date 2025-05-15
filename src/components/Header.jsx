@@ -97,6 +97,11 @@ function Header() {
                 Features
               </NavLink>
             </li>
+            <li>
+              <NavLink to="/reports" className={getLinkClass}>
+                Reports
+              </NavLink>
+            </li>
             {/* <li>
               <NavLink to="/income" className={getLinkClass}>
                 Income

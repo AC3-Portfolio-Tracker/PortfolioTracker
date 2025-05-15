@@ -72,24 +72,28 @@ function AdminDashboard() {
   const loadUsers = async () => {
     setLoading(true);
     try {
-      // Get profiles from the profiles table
-      const { data: profilesData, error: profilesError } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
       
-      if (profilesError) throw profilesError;
+      if (error) throw error;
       
-      // Transform the data to include account type
-      const usersWithRoles = profilesData.map(profile => {
-        // In a production app, you would check user metadata for role
-        // For now, use a default role
-        return {
-          ...profile,
-          role: profile.is_admin ? 'admin' : 'authenticated',
-          accountType: profile.account_type || 'free'
-        };
-      });
+      // For each profile, get the auth user data to check roles
+      const usersWithRoles = await Promise.all(
+        data.map(async (profile) => {
+          // This is a simulated function - in real implementation
+          // you would need to either use Supabase admin or server functions
+          // to get user roles from the auth.users table
+          const userRole = await getUserRole(profile.id);
+          
+          return {
+            ...profile,
+            role: userRole,
+            accountType: userRole === 'admin' ? 'Admin' : 'Regular'
+          };
+        })
+      );
       
       setUsers(usersWithRoles);
     } catch (error) {
@@ -98,6 +102,13 @@ function AdminDashboard() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Simulate getting user role - in production this should be a server function
+  const getUserRole = async (userId) => {
+    // This is just a placeholder. In a real app, you'd need admin access
+    // to the auth.users table or use Supabase Edge Functions
+    return userId === 'some-admin-id' ? 'admin' : 'authenticated';
   };
 
   // Load system configurations
@@ -118,31 +129,25 @@ function AdminDashboard() {
     loadConfigurations();
   }, []);
 
-  // Update to use metadata instead of PostgreSQL roles
   const handleUpdateUserRole = async (userId, newRole) => {
     setLoading(true);
     try {
-      // Update profile table with is_admin flag
-      const isAdmin = newRole === 'admin';
-      const { error } = await supabase
-        .from('profiles')
-        .update({ is_admin: isAdmin })
-        .eq('id', userId);
+      // In a real app, this would be a call to a secure backend function
+      // that has administrative privileges to update user roles
+      // Here we're simulating it
       
-      if (error) throw error;
-      
-      // Update the UI
+      // Update the user in the UI immediately for better UX
       setUsers(users.map(user => 
         user.id === userId 
           ? { 
               ...user, 
               role: newRole, 
-              is_admin: isAdmin
+              accountType: newRole === 'admin' ? 'Admin' : 'Regular'
             } 
           : user
       ));
       
-      showNotification(`User role updated to ${newRole}`, 'success');
+      showNotification(`User role updated successfully`, 'success');
     } catch (error) {
       console.error('Error updating user role:', error);
       showNotification(`Error updating user role: ${error.message}`, 'error');

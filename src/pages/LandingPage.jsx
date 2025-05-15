@@ -10,13 +10,7 @@ import {
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { Link as RouterLink } from "react-router-dom";
-import {
-  TrendingUp,
-  ShowChart,
-  Upload,
-  Security,
-  Dashboard,
-} from "@mui/icons-material";
+import { TrendingUp, ShowChart, Upload, Security, Dashboard } from "@mui/icons-material";
 
 const FeatureItem = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(3),
@@ -111,7 +105,7 @@ const LandingPage = () => {
                 alignItems: "center",
               }}
             >
-              {/* <Box
+              <Box
                 sx={{
                   maxWidth: "100%",
                   height: 400,
@@ -127,20 +121,18 @@ const LandingPage = () => {
                   color: "text.secondary",
                 }}
               >
-                <Dashboard
-                  sx={{ fontSize: 80, mb: 2, color: "primary.main" }}
-                />
+                <Dashboard sx={{ fontSize: 80, mb: 2, color: "primary.main" }} />
                 <Typography variant="h5" component="h3">
                   Portfolio Dashboard
                 </Typography>
-              </Box> */}
+              </Box>
             </Grid>
           </Grid>
         </Container>
       </Box>
 
       {/* Features Section */}
-      {/* <Container sx={{ mt: 10, mb: 10 }}>
+      <Container sx={{ mt: 10, mb: 10 }}>
         <Typography
           variant="h3"
           component="h2"
@@ -209,9 +201,9 @@ const LandingPage = () => {
             </FeatureItem>
           </Grid>
         </Grid>
-      </Container> */}
+      </Container>
     </Box>
   );
 };
 
-export default LandingPage;
+export default LandingPage; 

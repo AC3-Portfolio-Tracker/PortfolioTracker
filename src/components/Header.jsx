@@ -98,11 +98,7 @@ function Header() {
                 Features
               </NavLink>
             </li>
-            <li>
-              <NavLink to="/settings" className={getLinkClass}>
-                Settings
-              </NavLink>
-            </li>
+            {/* Settings moved to dropdown menu */}
           </ul>
         ) : (
           <ul>
@@ -161,6 +157,15 @@ function Header() {
                   <PersonIcon fontSize="small" />
                 </ListItemIcon>
                 Your Profile
+              </MenuItem>
+              <MenuItem onClick={() => {
+                navigate("/settings");
+                handleClose();
+              }}>
+                <ListItemIcon>
+                  <SettingsIcon fontSize="small" />
+                </ListItemIcon>
+                Settings
               </MenuItem>
               <MenuItem onClick={handleSignOut}>
                 <ListItemIcon>

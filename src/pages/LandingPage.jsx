@@ -8,7 +8,7 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
-import { styled } from "@mui/material/styles";
+import { styled, alpha } from "@mui/material/styles";
 import { Link as RouterLink } from "react-router-dom";
 import {
   TrendingUp,
@@ -18,52 +18,83 @@ import {
   Dashboard,
 } from "@mui/icons-material";
 
+// Updated FeatureItem for dark theme appearance as per the image
 const FeatureItem = styled(Paper)(({ theme }) => ({
+  backgroundColor: theme.palette.grey[800], // Darker card background
+  color: theme.palette.common.white, // Default text color for title
   padding: theme.spacing(3),
   textAlign: "center",
   height: "100%",
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
+  justifyContent: "flex-start", // Keep content aligned to the top
+  boxShadow: "none", // No shadow by default as per the image
+  borderRadius: theme.shape.borderRadius, // Standard MUI border radius
   transition: "transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out",
   "&:hover": {
     transform: "translateY(-5px)",
-    boxShadow: theme.shadows[10],
+    boxShadow: theme.shadows[8], // A moderate shadow on hover
   },
 }));
 
 const HeroButton = styled(Button)(({ theme }) => ({
-  padding: theme.spacing(1.5, 5),
-  borderRadius: theme.shape.borderRadius * 3,
-  fontWeight: 600,
-  fontSize: "1.1rem",
-  margin: theme.spacing(2, 2),
+  padding: theme.spacing(1.5, 4),
+  borderRadius: theme.shape.borderRadius * 2.5,
+  fontWeight: 700,
+  fontSize: "1rem",
 }));
 
 const LandingPage = () => {
   const theme = useTheme();
 
+  const features = [
+    {
+      icon: Upload,
+      title: "Easy Import",
+      desc: "Import your investment data from various brokers with a simple CSV upload.",
+    },
+    {
+      icon: TrendingUp,
+      title: "Performance Tracking",
+      desc: "Track your portfolio's performance over time with insightful metrics and charts.",
+    },
+    {
+      icon: ShowChart,
+      title: "Advanced Analytics",
+      desc: "Analyze your investment strategy with powerful tools and visualizations.",
+    },
+    {
+      icon: Security,
+      title: "Secure Storage",
+      desc: "Your data is securely stored and encrypted for your peace of mind.",
+    },
+  ];
+
   return (
-    <Box sx={{ overflow: "hidden" }}>
-      {/* Hero Section */}
+    <Box sx={{ overflowX: "hidden" }}>
+      {/* Hero Section (remains light themed as per previous styling) */}
       <Box
         sx={{
           bgcolor: "background.default",
-          pt: 12,
-          pb: 12,
-          borderRadius: "0 0 20% 20%",
+          pt: { xs: 8, sm: 10, md: 12 },
+          pb: { xs: 8, sm: 10, md: 12 },
+          borderBottomLeftRadius: { xs: "30px", md: "50px" },
+          borderBottomRightRadius: { xs: "30px", md: "50px" },
           position: "relative",
         }}
       >
         <Container maxWidth="lg">
-          <Grid container spacing={4} alignItems="center">
+          <Grid container spacing={{ xs: 4, md: 6 }} alignItems="center">
             <Grid item xs={12} md={6}>
               <Typography
                 variant="h2"
                 component="h1"
-                gutterBottom
                 fontWeight="bold"
-                sx={{ mb: 3 }}
+                sx={{
+                  mb: 2,
+                  fontSize: { xs: "2.5rem", sm: "3rem", md: "3.5rem" },
+                }}
               >
                 Track Your Investments
                 <Box component="span" sx={{ color: "primary.main" }}>
@@ -72,19 +103,28 @@ const LandingPage = () => {
                 </Box>
               </Typography>
               <Typography
-                variant="h5"
-                color="textSecondary"
-                paragraph
-                sx={{ mb: 4 }}
+                variant="h6"
+                color="text.secondary"
+                sx={{
+                  mb: 3,
+                  fontSize: { xs: "1rem", sm: "1.1rem", md: "1.2rem" },
+                }}
               >
                 Monitor your portfolio performance, track dividends, and analyze
                 your investment strategy with our powerful tools.
               </Typography>
-              <Box sx={{ mt: 4 }}>
+              <Box
+                sx={{
+                  mt: 4,
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 2,
+                  justifyContent: { xs: "center", md: "flex-start" },
+                }}
+              >
                 <HeroButton
                   variant="contained"
                   color="primary"
-                  size="large"
                   component={RouterLink}
                   to="/signup"
                 >
@@ -93,7 +133,6 @@ const LandingPage = () => {
                 <HeroButton
                   variant="outlined"
                   color="primary"
-                  size="large"
                   component={RouterLink}
                   to="/login"
                 >
@@ -109,107 +148,106 @@ const LandingPage = () => {
                 display: "flex",
                 justifyContent: "center",
                 alignItems: "center",
+                mt: { xs: 6, md: 0 },
               }}
             >
-              {/* <Box
+              <Box
                 sx={{
-                  maxWidth: "100%",
-                  height: 400,
-                  width: 600,
-                  boxShadow: 8,
-                  borderRadius: 4,
+                  maxWidth: { xs: "90%", sm: 450, md: 500 },
+                  width: "100%",
+                  height: { xs: 280, sm: 320, md: 360 },
+                  boxShadow: theme.shadows[6],
+                  borderRadius: theme.shape.borderRadius * 2.5,
                   overflow: "hidden",
                   display: "flex",
                   flexDirection: "column",
                   justifyContent: "center",
                   alignItems: "center",
                   bgcolor: "background.paper",
-                  color: "text.secondary",
+                  p: { xs: 2, sm: 3 },
+                  textAlign: "center",
                 }}
               >
                 <Dashboard
-                  sx={{ fontSize: 80, mb: 2, color: "primary.main" }}
+                  sx={{
+                    fontSize: { xs: 50, sm: 60, md: 70 },
+                    mb: 2,
+                    color: "primary.main",
+                  }}
                 />
-                <Typography variant="h5" component="h3">
+                <Typography variant="h6" component="h3" fontWeight="medium">
                   Portfolio Dashboard
                 </Typography>
-              </Box> */}
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mt: 1, px: 1 }}
+                >
+                  A glimpse into your powerful dashboard.
+                </Typography>
+              </Box>
             </Grid>
           </Grid>
         </Container>
       </Box>
 
-      {/* Features Section */}
-      {/* <Container sx={{ mt: 10, mb: 10 }}>
-        <Typography
-          variant="h3"
-          component="h2"
-          align="center"
-          gutterBottom
-          fontWeight="medium"
-          sx={{ mb: 6 }}
-        >
-          Key Features
-        </Typography>
-        <Grid container spacing={4}>
-          <Grid item xs={12} sm={6} md={3}>
-            <FeatureItem elevation={3}>
-              <Upload
-                sx={{ fontSize: 60, color: "primary.main", mb: 2 }}
-              />
-              <Typography variant="h5" component="h3" gutterBottom>
-                Easy Import
-              </Typography>
-              <Typography>
-                Import your investment data from various brokers with a simple
-                CSV upload.
-              </Typography>
-            </FeatureItem>
+      {/* Features Section - Styled to match the dark image provided */}
+      <Box
+        component="section" // Semantic HTML
+        sx={{
+          pt: { xs: 6, md: 10 },
+          pb: { xs: 6, md: 10 },
+          bgcolor: theme.palette.grey[900], // Dark background for the entire section
+        }}
+      >
+        <Container maxWidth="lg">
+          <Typography
+            variant="h4"
+            component="h2"
+            align="center"
+            fontWeight="bold"
+            sx={{
+              mb: { xs: 4, md: 6 },
+              fontSize: { xs: "1.8rem", sm: "2.25rem", md: "2.5rem" },
+              color: theme.palette.common.white, // Title color for dark background
+            }}
+          >
+            Key Features
+          </Typography>
+          <Grid container spacing={3}>
+            {features.map((feature, index) => (
+              <Grid item xs={12} sm={6} md={3} key={index}>
+                <FeatureItem>
+                  {" "}
+                  {/* elevation is handled by styled component */}
+                  <Box sx={{ color: "#64b5f6", mb: 2 }}>
+                    {" "}
+                    {/* Light blue for icons (MUI blue[300]) */}
+                    <feature.icon sx={{ fontSize: 50 }} />
+                  </Box>
+                  <Typography
+                    variant="h6"
+                    component="h3"
+                    fontWeight="medium"
+                    gutterBottom
+                  >
+                    {/* Text color is inherited from FeatureItem (common.white) */}
+                    {feature.title}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: theme.palette.grey[400] }}
+                  >
+                    {" "}
+                    {/* Lighter grey for description */}
+                    {feature.desc}
+                  </Typography>
+                </FeatureItem>
+              </Grid>
+            ))}
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <FeatureItem elevation={3}>
-              <TrendingUp
-                sx={{ fontSize: 60, color: "primary.main", mb: 2 }}
-              />
-              <Typography variant="h5" component="h3" gutterBottom>
-                Performance Tracking
-              </Typography>
-              <Typography>
-                Track your portfolio's performance over time with insightful
-                metrics and charts.
-              </Typography>
-            </FeatureItem>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <FeatureItem elevation={3}>
-              <ShowChart
-                sx={{ fontSize: 60, color: "primary.main", mb: 2 }}
-              />
-              <Typography variant="h5" component="h3" gutterBottom>
-                Analytics
-              </Typography>
-              <Typography>
-                Analyze your investment strategy with powerful tools and
-                visualizations.
-              </Typography>
-            </FeatureItem>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <FeatureItem elevation={3}>
-              <Security
-                sx={{ fontSize: 60, color: "primary.main", mb: 2 }}
-              />
-              <Typography variant="h5" component="h3" gutterBottom>
-                Secure Storage
-              </Typography>
-              <Typography>
-                Your data is securely stored and encrypted for your peace of
-                mind.
-              </Typography>
-            </FeatureItem>
-          </Grid>
-        </Grid>
-      </Container> */}
+        </Container>
+      </Box>
     </Box>
   );
 };

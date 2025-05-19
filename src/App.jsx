@@ -19,6 +19,7 @@ import PricingPage from "./pages/PricingPage";
 import FeaturesPage from "./pages/FeaturesPage";
 import { useAuth } from "./contexts/AuthContext";
 
+
 import Reports from "./pages/Reports";
 import ReportRoutes from "./pages/ReportRoutes";
 

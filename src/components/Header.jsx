@@ -88,6 +88,11 @@ function Header() {
                 Performance
               </NavLink>
             </li>
+                        <li>
+              <NavLink to="/reports" className={getLinkClass}>
+                Reports
+              </NavLink>
+            </li>
             <li>
               <NavLink to="/pricing" className={getLinkClass}>
                 Pricing

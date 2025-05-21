@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import "./Header.css";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import ThemeToggle from "./ThemeToggle";
 import {
   Button,
   Menu,
@@ -20,13 +21,13 @@ import {
 } from "@mui/icons-material";
 
 function Header() {
-  const { isAuthenticated, signOut, user, profile } = useAuth();
+  const { isAuthenticated, signOut, user } = useAuth();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
 
-  // Check if user is admin based on profile.is_admin flag
-  const isAdmin = profile?.is_admin === true;
+  // Check if user is admin - we'll treat role === 'admin' as admin user
+  const isAdmin = user?.role === "admin";
 
   const handleSignOut = async () => {
     await signOut();
@@ -97,21 +98,7 @@ function Header() {
                 Features
               </NavLink>
             </li>
-             <li>
-              <NavLink to="/income" className={getLinkClass}>
-                Income
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/activities" className={getLinkClass}>
-                Activities
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/settings" className={getLinkClass}>
-                Settings
-              </NavLink>
-            </li>
+            {/* Settings moved to dropdown menu */}
           </ul>
         ) : (
           <ul>
@@ -129,6 +116,7 @@ function Header() {
         )}
       </nav>
       <div className="user-controls">
+        <ThemeToggle />
         {isAuthenticated ? (
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <IconButton
@@ -169,6 +157,17 @@ function Header() {
                   <PersonIcon fontSize="small" />
                 </ListItemIcon>
                 Your Profile
+              </MenuItem>
+              <MenuItem
+                onClick={() => {
+                  navigate("/settings");
+                  handleClose();
+                }}
+              >
+                <ListItemIcon>
+                  <SettingsIcon fontSize="small" />
+                </ListItemIcon>
+                Settings
               </MenuItem>
               <MenuItem onClick={handleSignOut}>
                 <ListItemIcon>

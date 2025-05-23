@@ -1,52 +1,115 @@
-import React from 'react';
-import HoldingsChart from '../components/HoldingsChart';
-import CountryChart from '../components/CountryChart';
-import CurrencyChart from '../components/CurrencyChart';
-import ClassChart from '../components/ClassChart';
-import SectorChart from '../components/SectorChart';
-//import TotalHoldingsCard from '../components/TotalHoldingsCard';
+import React, { useState, useEffect } from "react";
+import { supabase } from "../lib/supabase";
+import CountryChart from "../components/CountryChart";
+import CurrencyChart from "../components/CurrencyChart";
+import ClassChart from "../components/ClassChart";
+import SectorChart from "../components/SectorChart";
 
 const Holdings = () => {
-  // Sample holdings data
-  const holdings = [
-    { symbol: 'AAPL', name: 'Apple Inc.', quantity: 10, price: 180, class: 'Equity', currency: 'EURO', country: 'Italy', sector: 'Technology' },
-    { symbol: 'TSLA', name: 'Tesla Inc.', quantity: 5, price: 260, class: 'Equity', currency: 'USD', country: 'USA', sector: 'Automotive' },
-    { symbol: 'BHP', name: 'BHP Group', quantity: 20, price: 50, class: 'Equity', currency: 'AUD', country: 'Australia', sector: 'Mining' },
-    { symbol: 'CBA', name: 'Commonwealth Bank', quantity: 15, price: 100, class: 'Equity', currency: 'AUD', country: 'Australia', sector: 'Finance' },
-    { symbol: 'GOVT', name: 'US Treasury Bond ETF', quantity: 30, price: 25, class: 'Fixed Income', currency: 'USD', country: 'USA', sector: 'Government' },
-  ];
+  const [transactions, setTransactions] = useState([]);
+  const [total, setTotal] = useState(0);
+
+  const loadTransactions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("activities")
+        .select(
+          `
+            *,
+            securities:security_id (
+              symbol,
+              name,
+              exchange,
+              currency
+            ),
+            brokers:broker_id (
+              name
+            )
+          `
+        )
+        .order("date", { ascending: false });
+
+      if (error) throw error;
+
+      const formattedTransactions = data.map((tx) => ({
+        id: tx.id,
+        type: tx.type,
+        date: new Date(tx.date).toLocaleDateString(),
+        market: tx.securities?.exchange || "",
+        code: tx.securities?.symbol || "",
+        securityName: tx.securities?.name || tx.securities?.symbol || "",
+        quantity: tx.quantity,
+        price: tx.price,
+        brokerage: tx.fees,
+        currency: tx.currency,
+        totalAmount: tx.total_amount,
+        broker: tx.brokers?.name || "",
+        notes: tx.notes,
+      }));
+
+      const totalAmountSum = formattedTransactions.reduce(
+        (sum, tx) => sum + (tx.totalAmount || 0),
+        0
+      );
+
+      setTotal(totalAmountSum);
+
+      setTransactions(formattedTransactions);
+    } catch (error) {
+      console.error("Error loading transactions:", error);
+      throw error;
+    }
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        await loadTransactions();
+      } catch (error) {
+        console.error("Error in initial data loading:", error);
+      }
+    };
+
+    fetchData();
+    return () => {};
+  }, []);
 
   // Aggregation helpers
   const aggregateByKey = (key) => {
     const map = {};
-    holdings.forEach(item => {
+    transactions.forEach((item) => {
       const total = item.price * item.quantity;
       map[item[key]] = (map[item[key]] || 0) + total;
     });
     return Object.entries(map).map(([name, value]) => ({ name, value }));
   };
 
-  const classData = aggregateByKey('class');
-  const currencyData = aggregateByKey('currency');
-  const countryData = aggregateByKey('country');
-  const sectorData = aggregateByKey('sector');
+  const classData = aggregateByKey("market");
+  const currencyData = aggregateByKey("currency");
+  const countryData = aggregateByKey("code");
+  const sectorData = aggregateByKey("broker");
 
   return (
-    <div style={{ padding: '20px' }}>
+    <div style={{ padding: "20px" }}>
       <h2>Holdings Summary</h2>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+      <h1>CASH: {total.toFixed(2)}</h1>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(2,1fr)",
+          gap: "20px",
+          marginBottom: "30px",
+        }}
+      >
         <ClassChart data={classData} />
         <CurrencyChart data={currencyData} />
         <CountryChart data={countryData} />
         <SectorChart data={sectorData} />
-        {/*<TotalHoldingsCard holdings={holdings} />*/}
       </div>
 
-      <h2>My Holdings</h2>
-      <HoldingsChart /> {/* You can customize this if needed */}
-
-      <table style={{ borderCollapse: 'collapse', width: '100%', marginTop: '20px' }}>
+      {/* <table style={{ borderCollapse: 'collapse', width: '100%', marginTop: '20px' }}>
         <thead>
           <tr style={{ backgroundColor: '#f2f2f2' }}>
             <th style={cellStyle}>Symbol</th>
@@ -67,15 +130,15 @@ const Holdings = () => {
             </tr>
           ))}
         </tbody>
-      </table>
+      </table> */}
     </div>
   );
 };
 
 const cellStyle = {
-  border: '1px solid #ddd',
-  padding: '8px',
-  textAlign: 'center',
+  border: "1px solid #ddd",
+  padding: "8px",
+  textAlign: "center",
 };
 
 export default Holdings;

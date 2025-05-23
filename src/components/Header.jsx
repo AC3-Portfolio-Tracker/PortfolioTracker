@@ -4,7 +4,7 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import ThemeToggle from "./ThemeToggle";
 import {
-  Button,
+  Button, // Button is imported but not directly used, consider removing if not needed elsewhere
   Menu,
   MenuItem,
   Avatar,
@@ -44,7 +44,6 @@ function Header() {
   };
 
   const navigateToProfile = () => {
-    navigate("/settings");
     // Pass state to Settings page to activate the "Your Profile" tab
     navigate("/settings", { state: { activeTab: "Your Profile" } });
     handleClose();
@@ -117,7 +116,8 @@ function Header() {
       </nav>
       <div className="user-controls">
         <ThemeToggle />
-        {isAuthenticated ? (
+        {/* Conditionally render user profile controls if authenticated */}
+        {isAuthenticated && (
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <IconButton
               onClick={handleProfileOpen}
@@ -177,8 +177,6 @@ function Header() {
               </MenuItem>
             </Menu>
           </div>
-        ) : (
-          <div className="code-icon">&lt;/&gt;</div>
         )}
       </div>
     </header>

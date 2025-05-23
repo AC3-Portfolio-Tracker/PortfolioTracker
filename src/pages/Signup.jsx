@@ -16,7 +16,7 @@ import { useAuth } from "../contexts/AuthContext";
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   width: "100%",
-  maxWidth: 500,
+  maxWidth: 550, // Increased maxWidth to make the form and fields wider
   padding: theme.spacing(4),
   display: "flex",
   flexDirection: "column",
@@ -27,7 +27,7 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
 }));
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
-  margin: theme.spacing(1.5, 0),
+  // The width will be controlled by the parent Grid item (fullWidth prop on TextField or width: "100%" here)
   width: "100%",
 }));
 
@@ -37,6 +37,16 @@ const StyledButton = styled(Button)(({ theme }) => ({
   fontWeight: 600,
   borderRadius: theme.shape.borderRadius * 2,
   margin: theme.spacing(3, 0, 2, 0),
+}));
+
+const LogoText = styled(Typography)(({ theme }) => ({
+  marginBottom: theme.spacing(3),
+  fontWeight: "bold",
+  color: theme.palette.primary.main,
+  textDecoration: "none",
+  "&:hover": {
+    color: theme.palette.primary.dark,
+  },
 }));
 
 function SignupPage() {
@@ -54,8 +64,7 @@ function SignupPage() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    
-    // Validate passwords match
+
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       return;
@@ -63,22 +72,22 @@ function SignupPage() {
 
     setLoading(true);
     setError(null);
+    setSuccess(false);
 
     try {
-      // Additional user data to store in the profile
       const userData = {
         first_name: firstName,
         last_name: lastName,
       };
 
-      const { user } = await signUp(email, password, userData);
-      
-      // If no user is returned, it might mean email confirmation is required
-      if (!user) {
+      const result = await signUp(email, password, userData);
+
+      if (result && result.needsConfirmation) {
         setSuccess(true);
-      } else {
-        // If we have the user right away, redirect to home
+      } else if (result && result.user) {
         navigate("/");
+      } else {
+        setSuccess(true);
       }
     } catch (err) {
       console.error("Signup error:", err);
@@ -88,7 +97,6 @@ function SignupPage() {
     }
   };
 
-  // Show success message if email confirmation is required
   if (success) {
     return (
       <Box
@@ -97,13 +105,20 @@ function SignupPage() {
         alignItems="center"
         minHeight="100vh"
         bgcolor={theme.palette.background.default}
+        p={2}
       >
         <StyledPaper>
-          <Typography variant="h5" gutterBottom color="primary">
+          {" "}
+          {/* Using StyledPaper for consistency even in success message */}
+          <LogoText variant="h5" component={RouterLink} to="/">
+            Portfolio Tracker
+          </LogoText>
+          <Typography variant="h5" gutterBottom color="primary" sx={{ mt: 2 }}>
             Verification Email Sent
           </Typography>
           <Typography variant="body1" align="center" sx={{ mb: 3 }}>
-            A confirmation email has been sent to {email}. Please check your inbox and click the link to confirm your account.
+            A confirmation email has been sent to {email}. Please check your
+            inbox and click the link to confirm your account.
           </Typography>
           <Button
             component={RouterLink}
@@ -125,72 +140,88 @@ function SignupPage() {
       alignItems="center"
       minHeight="100vh"
       bgcolor={theme.palette.background.default}
+      p={2}
     >
       <StyledPaper>
+        <LogoText variant="h5" component={RouterLink} to="/">
+          Portfolio Tracker
+        </LogoText>
+
         <Typography variant="h4" gutterBottom color="primary">
           Create Account
         </Typography>
-        
+
         {error && (
           <Alert severity="error" sx={{ width: "100%", mb: 2 }}>
             {error}
           </Alert>
         )}
-        
-        <form onSubmit={handleSubmit} style={{ width: "100%" }}>
+
+        <form
+          onSubmit={handleSubmit}
+          style={{ width: "100%", marginTop: theme.spacing(1) }}
+        >
+          {/* Grid container will manage spacing between rows of fields */}
           <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12}>
+              {" "}
+              {/* Changed sm={6} to xs={12} */}
               <StyledTextField
                 label="First Name"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 required
-                fullWidth
+                fullWidth // Ensures it takes full width of Grid item
                 disabled={loading}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12}>
+              {" "}
+              {/* Changed sm={6} to xs={12} */}
               <StyledTextField
                 label="Last Name"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
+                required
+                fullWidth // Ensures it takes full width of Grid item
+                disabled={loading}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <StyledTextField
+                label="Email Address"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                fullWidth
+                disabled={loading}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <StyledTextField
+                label="Password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                fullWidth
+                disabled={loading}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <StyledTextField
+                label="Confirm Password"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 fullWidth
                 disabled={loading}
               />
             </Grid>
           </Grid>
-          
-          <StyledTextField
-            label="Email Address"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            fullWidth
-            disabled={loading}
-          />
-          
-          <StyledTextField
-            label="Password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            fullWidth
-            disabled={loading}
-          />
-          
-          <StyledTextField
-            label="Confirm Password"
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-            fullWidth
-            disabled={loading}
-          />
-          
+
           <StyledButton
             type="submit"
             variant="contained"
@@ -200,11 +231,16 @@ function SignupPage() {
           >
             {loading ? "Creating Account..." : "Sign Up"}
           </StyledButton>
-          
+
           <Box mt={2} textAlign="center">
             <Typography variant="body2" color="text.secondary">
               Already have an account?{" "}
-              <Link component={RouterLink} to="/login" variant="subtitle2" color="primary">
+              <Link
+                component={RouterLink}
+                to="/login"
+                variant="subtitle2"
+                color="primary"
+              >
                 Sign in
               </Link>
             </Typography>

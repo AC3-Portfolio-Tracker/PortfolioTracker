@@ -70,7 +70,7 @@ function Header() {
           <ul>
             <li>
               <NavLink to="/home" className={getLinkClass}>
-                Home
+                Overview
               </NavLink>
             </li>
             <li>

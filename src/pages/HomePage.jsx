@@ -16,7 +16,7 @@ import {
   DialogActions,
   DialogContent,
   DialogContentText,
-  DialogTitle
+  DialogTitle,
 } from "@mui/material";
 import { Add, UploadFile, Refresh, DeleteOutline } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
@@ -59,7 +59,8 @@ const HomePage = () => {
     try {
       const { data, error } = await supabase
         .from("activities")
-        .select(`
+        .select(
+          `
           *,
           securities:security_id (
             symbol,
@@ -70,13 +71,14 @@ const HomePage = () => {
           brokers:broker_id (
             name
           )
-        `)
+        `
+        )
         .order("date", { ascending: false });
 
       if (error) throw error;
-      
+
       // Format the transactions for display
-      const formattedTransactions = data.map(tx => ({
+      const formattedTransactions = data.map((tx) => ({
         id: tx.id,
         type: tx.type,
         date: new Date(tx.date).toLocaleDateString(),
@@ -125,7 +127,7 @@ const HomePage = () => {
     };
 
     fetchData();
-    
+
     // Clean up function to prevent state updates after unmount
     return () => {
       // This ensures we don't try to update state after component unmount
@@ -138,10 +140,10 @@ const HomePage = () => {
       message: `Successfully imported ${data.length} transactions`,
       severity: "success",
     });
-    
+
     // Refresh the transactions list
     loadTransactions();
-    
+
     // Reset the UI
     setIsUploading(false);
     setTabValue(0); // Switch back to the transactions tab
@@ -174,17 +176,21 @@ const HomePage = () => {
           .single();
 
         if (createSecurityError) {
-          throw new Error(`Error creating security: ${createSecurityError.message}`);
+          throw new Error(
+            `Error creating security: ${createSecurityError.message}`
+          );
         }
-        
+
         securityId = newSecurity.id;
       } else {
         securityId = securityData.id;
       }
 
       // Get the current user
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       // Create the activity
       const { error: activityError } = await supabase
         .from("activities")
@@ -196,9 +202,11 @@ const HomePage = () => {
           date: newTransaction.date,
           quantity: newTransaction.quantity,
           price: newTransaction.price,
-          total_amount: newTransaction.type === "Dividend" 
-            ? newTransaction.price 
-            : (newTransaction.price * newTransaction.quantity) + (newTransaction.brokerage || 0),
+          total_amount:
+            newTransaction.type === "Dividend"
+              ? newTransaction.price
+              : newTransaction.price * newTransaction.quantity +
+                (newTransaction.brokerage || 0),
           fees: newTransaction.brokerage,
           currency: newTransaction.currency,
           notes: newTransaction.notes,
@@ -217,7 +225,6 @@ const HomePage = () => {
       // Refresh transactions and reset form
       loadTransactions();
       setShowAddForm(false);
-      
     } catch (err) {
       console.error("Error adding transaction:", err);
       setNotification({
@@ -242,7 +249,7 @@ const HomePage = () => {
         message: "Transaction deleted successfully",
         severity: "success",
       });
-      
+
       // Refresh the transactions list
       loadTransactions();
     } catch (error) {
@@ -277,8 +284,10 @@ const HomePage = () => {
     setIsDeleting(true);
     try {
       // Get the current user
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       // Delete all activities for the current user
       const { error } = await supabase
         .from("activities")
@@ -286,13 +295,13 @@ const HomePage = () => {
         .eq("user_id", user.id);
 
       if (error) throw error;
-      
+
       setNotification({
         open: true,
         message: "Successfully deleted all your transaction data",
         severity: "success",
       });
-      
+
       // Clear the transactions list
       setTransactions([]);
     } catch (error) {
@@ -320,17 +329,44 @@ const HomePage = () => {
         Portfolio Dashboard
       </Typography>
 
-      <Box sx={{ mb: 4 }}>
-        <Tabs value={tabValue} onChange={handleTabChange} aria-label="portfolio tabs">
-          <Tab label="Transactions" />
-          <Tab label="Import" />
-        </Tabs>
+      <Box sx={{ display: "flex", gap: 2, mb: 4 }}>
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<UploadFile />}
+          onClick={() => {
+            setTabValue(1);
+            setShowAddForm(false);
+          }}
+          sx={{ textTransform: "none", px: 3, py: 1.5 }}
+        >
+          Import Transactions
+        </Button>
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<Add />}
+          onClick={() => {
+            setTabValue(0);
+            setShowAddForm(true);
+          }}
+          sx={{ textTransform: "none", px: 3, py: 1.5 }}
+        >
+          Add Transaction
+        </Button>
       </Box>
 
       {/* Transactions Tab */}
       {tabValue === 0 && (
         <>
-          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              mb: 3,
+              gap: 4,
+            }}
+          >
             <Typography variant="h5" component="h2">
               Transactions
             </Typography>
@@ -391,8 +427,8 @@ const HomePage = () => {
                 <CircularProgress />
               </Box>
             ) : transactions.length > 0 ? (
-              <TransactionTable 
-                transactions={transactions} 
+              <TransactionTable
+                transactions={transactions}
                 onDelete={handleDeleteTransaction}
               />
             ) : (
@@ -400,7 +436,11 @@ const HomePage = () => {
                 <Typography variant="h6" color="text.secondary" gutterBottom>
                   No transactions found
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mb: 3 }}
+                >
                   Import transactions or add them manually to get started
                 </Typography>
                 <Button
@@ -430,46 +470,64 @@ const HomePage = () => {
           <Typography variant="h5" component="h2" gutterBottom>
             Import Transactions
           </Typography>
+
+          {/* ——— New: Instruction Steps ——— */}
           <Typography variant="body1" paragraph>
-            Upload a CSV file to import your transactions. We support multiple broker formats including:
-            <ul>
-              <li>Sharesight Format</li>
-              <li>180 Markets</li>
-              <li>708 Wealth Management</li>
-              <li>Alpine Capital</li>
-              <li>ASR Wealth Advisers</li>
-              <li>HSBC Australia</li>
-            </ul>
-            Select your broker format from the dropdown and upload your CSV file.
+            <strong>How to import your CSV:</strong>
           </Typography>
+          <Box component="ol" sx={{ pl: 3, mb: 2 }}>
+            <Typography component="li" variant="body2" sx={{ mb: 1 }}>
+              Download your transaction history in CSV format from your broker.
+            </Typography>
+            <Typography component="li" variant="body2" sx={{ mb: 1 }}>
+              In the dropdown below, select the broker format that matches your
+              CSV.
+            </Typography>
+            <Typography component="li" variant="body2" sx={{ mb: 1 }}>
+              Click “Choose File” and select your CSV file.
+            </Typography>
+            <Typography component="li" variant="body2">
+              Hit “Upload” and wait for the confirmation message.
+            </Typography>
+          </Box>
+
+          <Typography variant="body1" paragraph>
+            Supported formats:
+          </Typography>
+          <ul>
+            <li>Sharesight</li>
+            <li>180 Markets</li>
+            <li>708 Wealth Management</li>
+            <li>Alpine Capital</li>
+            <li>ASR Wealth Advisers</li>
+            <li>HSBC Australia</li>
+          </ul>
+
           <EnhancedCSVUploader onUploadComplete={handleUploadComplete} />
         </>
       )}
 
       {/* Confirmation Dialog */}
-      <Dialog
-        open={deleteDialogOpen}
-        onClose={handleCloseDeleteDialog}
-      >
-        <DialogTitle>
-          Delete All Transaction Data
-        </DialogTitle>
+      <Dialog open={deleteDialogOpen} onClose={handleCloseDeleteDialog}>
+        <DialogTitle>Delete All Transaction Data</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to delete ALL of your transaction data? This will remove all transactions across all brokers and cannot be undone.
+            Are you sure you want to delete ALL of your transaction data? This
+            will remove all transactions across all brokers and cannot be
+            undone.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button 
-            onClick={handleCloseDeleteDialog} 
+          <Button
+            onClick={handleCloseDeleteDialog}
             color="primary"
             disabled={isDeleting}
           >
             Cancel
           </Button>
-          <Button 
-            onClick={handleDeleteAllData} 
-            color="error" 
+          <Button
+            onClick={handleDeleteAllData}
+            color="error"
             variant="contained"
             disabled={isDeleting}
           >
@@ -498,4 +556,4 @@ const HomePage = () => {
   );
 };
 
-export default HomePage; 
+export default HomePage;

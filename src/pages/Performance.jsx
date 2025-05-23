@@ -1,39 +1,133 @@
-import React from "react";
-import PerformanceChart from "./PerformanceChart";
-import AssetsTable from "./AssetsTable";
+import React, { useState } from "react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  ResponsiveContainer,
+} from "recharts";
 import "../components/Performance.css";
 
-const Performance = () => {
+const allData = {
+  "3M": [
+    { date: "Week 1", value: 21000 },
+    { date: "Week 2", value: 19000 },
+    { date: "Week 3", value: 22000 },
+    { date: "Week 4", value: 24000 },
+    { date: "Week 5", value: 26000 },
+    { date: "Week 6", value: 25000 },
+    { date: "Week 7", value: 27000 },
+    { date: "Week 8", value: 29000 },
+    { date: "Week 9", value: 30000 },
+    { date: "Week 10", value: 31000 },
+    { date: "Week 11", value: 31500 },
+    { date: "Week 12", value: 31618 },
+  ],
+  "1Y": [
+    { date: "Month 1", value: 18000 },
+    { date: "Month 3", value: 22000 },
+    { date: "Month 6", value: 26000 },
+    { date: "Month 9", value: 29000 },
+    { date: "Month 12", value: 31618 },
+  ],
+  ALL: [
+    { date: "Year 1", value: 10000 },
+    { date: "Year 2", value: 18000 },
+    { date: "Year 3", value: 24000 },
+    { date: "Year 4", value: 28000 },
+    { date: "Year 5", value: 31618 },
+  ],
+};
+
+const PerformancePage = () => {
+  const [timeRange, setTimeRange] = useState("3M");
+
+  const getFilteredData = () => {
+    const baseData = allData["3M"];
+    switch (timeRange) {
+      case "1W":
+        return baseData.slice(0, 1); // Show Week 1 only
+      case "1M":
+        return baseData.slice(0, 4); // Weeks 1–4
+      case "3M":
+        return baseData; // All 12 weeks
+      case "1Y":
+        return allData["1Y"];
+      case "ALL":
+        return allData["ALL"];
+      default:
+        return baseData;
+    }
+  };
+
+  const filteredData = getFilteredData();
+
   return (
-    <div className="performance-container">
-      {/* Page Heading */}
-      <h2 className="performance-heading">Your Portfolio</h2>
+    <div className="dashboard-container">
+      <div className="header">
+        <h2>Performance</h2>
+      </div>
 
-      {/* Page Content Wrapper */}
-      <div className="content-wrapper">
-        {/* Filters Section */}
-        <div className="filters-section">
-          <select className="simple-dropdown">
-            <option>In the last 5 years</option>
-            <option>In the last 3 years</option>
-            <option>In the last year</option>
-            <option>In the last 6 months</option>
-            <option>In the last month</option>
-          </select>
+      <div className="main-content">
+        <div className="chart-section">
+          <div className="chart-header">
+            <h3>$31,618.52</h3>
+            <p className="return-text">6,362.48 ↑ 25.19%</p>
+          </div>
+
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={filteredData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip />
+              <Line type="monotone" dataKey="value" stroke="#82ca9d" strokeWidth={2} />
+            </LineChart>
+          </ResponsiveContainer>
+
+          <div className="time-filters">
+            {["1W", "1M", "3M", "1Y", "ALL"].map((range) => (
+              <button
+                key={range}
+                className={timeRange === range ? "active" : ""}
+                onClick={() => setTimeRange(range)}
+              >
+                {range}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Performance Chart Card */}
-        <div className="chart-card">
-          <PerformanceChart />
-        </div>
-
-        {/* Assets Table Card */}
-        <div className="assets-table-card">
-          <AssetsTable />
+        <div className="info-section">
+          <div className="cash-balance">
+            <h4>Balance</h4>
+            <p>$202.39</p>
+          </div>
+          <ul className="summary">
+            <li>Investments: $31,416.13</li>
+            <li>Book Cost: $9,566.68</li>
+            <li>Net Deposit: $25,256.04</li>
+            <li>% of my portfolio: 9.96%</li>
+            <li>Today's return: $15.06 (0.05%)</li>
+            <li>Total return: $6,362.48 (25.19%)</li>
+          </ul>
+          <div className="contribution-warning">
+            <p>
+              You've contributed <strong>AU$9,020.94</strong> to this account in 2024. Your total is{" "}
+              <span className="over-limit">AU$9,020.94</span> which is over the AU$7,000.00 limit.
+            </p>
+            <div className="progress-bar">
+              <div className="filled" style={{ width: "129%" }}></div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-export default Performance;
+export default PerformancePage;
+
+

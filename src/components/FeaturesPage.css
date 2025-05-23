@@ -1,24 +1,43 @@
+/* Theme Variables */
+:root {
+  --bg-color: #ffffff;
+  --text-color: #121212;
+  --card-bg: #f0f0f0;
+  --secondary-text: #444444;
+}
+
+[data-theme="dark"] {
+  --bg-color: #121212;
+  --text-color: #ffffff;
+  --card-bg: #1e1e1e;
+  --secondary-text: #cccccc;
+}
+
+/* Features Container */
 .features-container {
   padding: 60px 30px;
-
+  background-color: var(--bg-color);
   text-align: center;
   font-family: "Segoe UI", sans-serif;
   animation: fadeIn 0.8s ease-in;
-  color: white;
+  color: var(--text-color);
 }
 
+/* Title */
 .features-title {
   font-size: 3rem;
-  color: #ffffff;
+  color: var(--text-color);
   margin-bottom: 10px;
 }
 
+/* Subtitle */
 .features-subtitle {
   font-size: 1.2rem;
-  color: #bbbbbb;
+  color: var(--secondary-text);
   margin-bottom: 50px;
 }
 
+/* Grid */
 .features-grid {
   display: flex;
   justify-content: center;
@@ -26,8 +45,9 @@
   flex-wrap: wrap;
 }
 
+/* Feature Card */
 .feature-card {
-  background: #1e1e1e;
+  background: var(--card-bg);
   border-radius: 20px;
   padding: 30px;
   width: 280px;
@@ -35,7 +55,7 @@
   transition: transform 0.4s ease, box-shadow 0.4s ease;
   text-align: left;
   animation: slideUp 0.5s ease;
-  color: white;
+  color: var(--text-color);
 }
 
 .feature-card:hover {
@@ -43,22 +63,25 @@
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
 }
 
+/* Icon/Image */
 .feature-image {
   width: 60px;
   margin-bottom: 20px;
 }
 
+/* Card Title */
 .feature-card h3 {
   margin-bottom: 10px;
-  color: #ffffff;
+  color: var(--text-color);
 }
 
+/* Card Paragraph */
 .feature-card p {
-  color: #cccccc;
+  color: var(--secondary-text);
   font-size: 0.95rem;
 }
 
-/* Removed sign-up button and footer */
+/* Removed Sign-up Button and Footer */
 .signup-button {
   display: none;
 }

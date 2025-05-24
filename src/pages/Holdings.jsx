@@ -93,7 +93,15 @@ const Holdings = () => {
     <div style={{ padding: "20px" }}>
       <h2>Holdings Summary</h2>
 
-      <h1>CASH: {total.toFixed(2)}</h1>
+      {/* <h1>CASH: {total.toFixed(2)}</h1> */}
+
+      <h1>
+        CASH: {total.toLocaleString('en-AU', {
+         style: 'currency',
+            currency: 'AUD'
+       })}
+      </h1>
+
 
       <div
         style={{
@@ -109,28 +117,7 @@ const Holdings = () => {
         <SectorChart data={sectorData} />
       </div>
 
-      {/* <table style={{ borderCollapse: 'collapse', width: '100%', marginTop: '20px' }}>
-        <thead>
-          <tr style={{ backgroundColor: '#f2f2f2' }}>
-            <th style={cellStyle}>Symbol</th>
-            <th style={cellStyle}>Company</th>
-            <th style={cellStyle}>Quantity</th>
-            <th style={cellStyle}>Price</th>
-            <th style={cellStyle}>Total Value</th>
-          </tr>
-        </thead>
-        <tbody>
-          {holdings.map((stock, index) => (
-            <tr key={index}>
-              <td style={cellStyle}>{stock.symbol}</td>
-              <td style={cellStyle}>{stock.name}</td>
-              <td style={cellStyle}>{stock.quantity}</td>
-              <td style={cellStyle}>${stock.price.toFixed(2)}</td>
-              <td style={cellStyle}>${(stock.quantity * stock.price).toFixed(2)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table> */}
+
     </div>
   );
 };

@@ -4,7 +4,11 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import ThemeToggle from "./ThemeToggle";
 import {
+<<<<<<< HEAD
   Button, // Button is imported but not directly used, consider removing if not needed elsewhere
+=======
+  Button,
+>>>>>>> my-backup
   Menu,
   MenuItem,
   Avatar,
@@ -44,6 +48,10 @@ function Header() {
   };
 
   const navigateToProfile = () => {
+<<<<<<< HEAD
+=======
+    navigate("/settings");
+>>>>>>> my-backup
     // Pass state to Settings page to activate the "Your Profile" tab
     navigate("/settings", { state: { activeTab: "Your Profile" } });
     handleClose();
@@ -69,7 +77,11 @@ function Header() {
           <ul>
             <li>
               <NavLink to="/home" className={getLinkClass}>
+<<<<<<< HEAD
                 Overview
+=======
+                Home
+>>>>>>> my-backup
               </NavLink>
             </li>
             <li>
@@ -121,8 +133,12 @@ function Header() {
       </nav>
       <div className="user-controls">
         <ThemeToggle />
+<<<<<<< HEAD
         {/* Conditionally render user profile controls if authenticated */}
         {isAuthenticated && (
+=======
+        {isAuthenticated ? (
+>>>>>>> my-backup
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <IconButton
               onClick={handleProfileOpen}
@@ -182,6 +198,11 @@ function Header() {
               </MenuItem>
             </Menu>
           </div>
+<<<<<<< HEAD
+=======
+        ) : (
+          <div className="code-icon">&lt;/&gt;</div>
+>>>>>>> my-backup
         )}
       </div>
     </header>

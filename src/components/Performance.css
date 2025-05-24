@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /* Performance.css */
 
 /* Base styles (light mode) */
@@ -53,3 +54,53 @@ body.dark .time-filters .active {
   background-color: #f0f0f0;
   color: #121212;
 }
+=======
+.performance-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  color: #ffffff;
+  min-height: 100vh;
+}
+
+.performance-heading {
+  font-size: 28px;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 24px;
+  padding: 32px 32px 0;
+}
+
+.content-wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px;
+}
+
+.filters-section {
+  margin-bottom: 32px;
+}
+
+.simple-dropdown {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: none;
+  background-color: #ffffff;
+  color: #1f2937;
+  font-size: 14px;
+}
+
+
+.chart-card,
+.assets-table-card {
+ 
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: 32px;
+}
+
+.chart-card {
+  margin-bottom: 48px;
+}
+>>>>>>> my-backup

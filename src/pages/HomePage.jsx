@@ -16,7 +16,11 @@ import {
   DialogActions,
   DialogContent,
   DialogContentText,
+<<<<<<< HEAD
   DialogTitle,
+=======
+  DialogTitle
+>>>>>>> my-backup
 } from "@mui/material";
 import { Add, UploadFile, Refresh, DeleteOutline } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
@@ -59,8 +63,12 @@ const HomePage = () => {
     try {
       const { data, error } = await supabase
         .from("activities")
+<<<<<<< HEAD
         .select(
           `
+=======
+        .select(`
+>>>>>>> my-backup
           *,
           securities:security_id (
             symbol,
@@ -71,6 +79,7 @@ const HomePage = () => {
           brokers:broker_id (
             name
           )
+<<<<<<< HEAD
         `
         )
         .order("date", { ascending: false });
@@ -79,6 +88,15 @@ const HomePage = () => {
 
       // Format the transactions for display
       const formattedTransactions = data.map((tx) => ({
+=======
+        `)
+        .order("date", { ascending: false });
+
+      if (error) throw error;
+      
+      // Format the transactions for display
+      const formattedTransactions = data.map(tx => ({
+>>>>>>> my-backup
         id: tx.id,
         type: tx.type,
         date: new Date(tx.date).toLocaleDateString(),
@@ -127,7 +145,11 @@ const HomePage = () => {
     };
 
     fetchData();
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> my-backup
     // Clean up function to prevent state updates after unmount
     return () => {
       // This ensures we don't try to update state after component unmount
@@ -140,10 +162,17 @@ const HomePage = () => {
       message: `Successfully imported ${data.length} transactions`,
       severity: "success",
     });
+<<<<<<< HEAD
 
     // Refresh the transactions list
     loadTransactions();
 
+=======
+    
+    // Refresh the transactions list
+    loadTransactions();
+    
+>>>>>>> my-backup
     // Reset the UI
     setIsUploading(false);
     setTabValue(0); // Switch back to the transactions tab
@@ -176,21 +205,32 @@ const HomePage = () => {
           .single();
 
         if (createSecurityError) {
+<<<<<<< HEAD
           throw new Error(
             `Error creating security: ${createSecurityError.message}`
           );
         }
 
+=======
+          throw new Error(`Error creating security: ${createSecurityError.message}`);
+        }
+        
+>>>>>>> my-backup
         securityId = newSecurity.id;
       } else {
         securityId = securityData.id;
       }
 
       // Get the current user
+<<<<<<< HEAD
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
+=======
+      const { data: { user } } = await supabase.auth.getUser();
+      
+>>>>>>> my-backup
       // Create the activity
       const { error: activityError } = await supabase
         .from("activities")
@@ -202,11 +242,17 @@ const HomePage = () => {
           date: newTransaction.date,
           quantity: newTransaction.quantity,
           price: newTransaction.price,
+<<<<<<< HEAD
           total_amount:
             newTransaction.type === "Dividend"
               ? newTransaction.price
               : newTransaction.price * newTransaction.quantity +
                 (newTransaction.brokerage || 0),
+=======
+          total_amount: newTransaction.type === "Dividend" 
+            ? newTransaction.price 
+            : (newTransaction.price * newTransaction.quantity) + (newTransaction.brokerage || 0),
+>>>>>>> my-backup
           fees: newTransaction.brokerage,
           currency: newTransaction.currency,
           notes: newTransaction.notes,
@@ -225,6 +271,10 @@ const HomePage = () => {
       // Refresh transactions and reset form
       loadTransactions();
       setShowAddForm(false);
+<<<<<<< HEAD
+=======
+      
+>>>>>>> my-backup
     } catch (err) {
       console.error("Error adding transaction:", err);
       setNotification({
@@ -249,7 +299,11 @@ const HomePage = () => {
         message: "Transaction deleted successfully",
         severity: "success",
       });
+<<<<<<< HEAD
 
+=======
+      
+>>>>>>> my-backup
       // Refresh the transactions list
       loadTransactions();
     } catch (error) {
@@ -284,10 +338,15 @@ const HomePage = () => {
     setIsDeleting(true);
     try {
       // Get the current user
+<<<<<<< HEAD
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
+=======
+      const { data: { user } } = await supabase.auth.getUser();
+      
+>>>>>>> my-backup
       // Delete all activities for the current user
       const { error } = await supabase
         .from("activities")
@@ -295,13 +354,21 @@ const HomePage = () => {
         .eq("user_id", user.id);
 
       if (error) throw error;
+<<<<<<< HEAD
 
+=======
+      
+>>>>>>> my-backup
       setNotification({
         open: true,
         message: "Successfully deleted all your transaction data",
         severity: "success",
       });
+<<<<<<< HEAD
 
+=======
+      
+>>>>>>> my-backup
       // Clear the transactions list
       setTransactions([]);
     } catch (error) {
@@ -329,6 +396,7 @@ const HomePage = () => {
         Portfolio Dashboard
       </Typography>
 
+<<<<<<< HEAD
       <Box sx={{ display: "flex", gap: 2, mb: 4 }}>
         <Button
           variant="contained"
@@ -354,11 +422,19 @@ const HomePage = () => {
         >
           Add Transaction
         </Button>
+=======
+      <Box sx={{ mb: 4 }}>
+        <Tabs value={tabValue} onChange={handleTabChange} aria-label="portfolio tabs">
+          <Tab label="Transactions" />
+          <Tab label="Import" />
+        </Tabs>
+>>>>>>> my-backup
       </Box>
 
       {/* Transactions Tab */}
       {tabValue === 0 && (
         <>
+<<<<<<< HEAD
           <Box
             sx={{
               display: "flex",
@@ -367,6 +443,9 @@ const HomePage = () => {
               gap: 4,
             }}
           >
+=======
+          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
+>>>>>>> my-backup
             <Typography variant="h5" component="h2">
               Transactions
             </Typography>
@@ -427,8 +506,13 @@ const HomePage = () => {
                 <CircularProgress />
               </Box>
             ) : transactions.length > 0 ? (
+<<<<<<< HEAD
               <TransactionTable
                 transactions={transactions}
+=======
+              <TransactionTable 
+                transactions={transactions} 
+>>>>>>> my-backup
                 onDelete={handleDeleteTransaction}
               />
             ) : (
@@ -436,11 +520,15 @@ const HomePage = () => {
                 <Typography variant="h6" color="text.secondary" gutterBottom>
                   No transactions found
                 </Typography>
+<<<<<<< HEAD
                 <Typography
                   variant="body2"
                   color="text.secondary"
                   sx={{ mb: 3 }}
                 >
+=======
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+>>>>>>> my-backup
                   Import transactions or add them manually to get started
                 </Typography>
                 <Button
@@ -470,6 +558,7 @@ const HomePage = () => {
           <Typography variant="h5" component="h2" gutterBottom>
             Import Transactions
           </Typography>
+<<<<<<< HEAD
 
           {/* ——— New: Instruction Steps ——— */}
           <Typography variant="body1" paragraph>
@@ -503,11 +592,26 @@ const HomePage = () => {
             <li>HSBC Australia</li>
           </ul>
 
+=======
+          <Typography variant="body1" paragraph>
+            Upload a CSV file to import your transactions. We support multiple broker formats including:
+            <ul>
+              <li>Sharesight Format</li>
+              <li>180 Markets</li>
+              <li>708 Wealth Management</li>
+              <li>Alpine Capital</li>
+              <li>ASR Wealth Advisers</li>
+              <li>HSBC Australia</li>
+            </ul>
+            Select your broker format from the dropdown and upload your CSV file.
+          </Typography>
+>>>>>>> my-backup
           <EnhancedCSVUploader onUploadComplete={handleUploadComplete} />
         </>
       )}
 
       {/* Confirmation Dialog */}
+<<<<<<< HEAD
       <Dialog open={deleteDialogOpen} onClose={handleCloseDeleteDialog}>
         <DialogTitle>Delete All Transaction Data</DialogTitle>
         <DialogContent>
@@ -520,14 +624,37 @@ const HomePage = () => {
         <DialogActions>
           <Button
             onClick={handleCloseDeleteDialog}
+=======
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleCloseDeleteDialog}
+      >
+        <DialogTitle>
+          Delete All Transaction Data
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete ALL of your transaction data? This will remove all transactions across all brokers and cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={handleCloseDeleteDialog} 
+>>>>>>> my-backup
             color="primary"
             disabled={isDeleting}
           >
             Cancel
           </Button>
+<<<<<<< HEAD
           <Button
             onClick={handleDeleteAllData}
             color="error"
+=======
+          <Button 
+            onClick={handleDeleteAllData} 
+            color="error" 
+>>>>>>> my-backup
             variant="contained"
             disabled={isDeleting}
           >
@@ -556,4 +683,8 @@ const HomePage = () => {
   );
 };
 
+<<<<<<< HEAD
 export default HomePage;
+=======
+export default HomePage; 
+>>>>>>> my-backup

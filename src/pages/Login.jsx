@@ -6,10 +6,17 @@ import {
   Paper,
   Box,
   Link,
+<<<<<<< HEAD
   // IconButton, // Not used
   Alert,
 } from "@mui/material";
 import { Lock, Person } from "@mui/icons-material"; // Keeping original icons
+=======
+  IconButton,
+  Alert,
+} from "@mui/material";
+import { Lock, Person } from "@mui/icons-material";
+>>>>>>> my-backup
 import { styled } from "@mui/material/styles";
 import { useTheme } from "@mui/material/styles";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
@@ -22,17 +29,27 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
+<<<<<<< HEAD
   borderRadius: theme.shape.borderRadius * 2,
   boxShadow: theme.shadows[8],
+=======
+  borderRadius: theme.shape.borderRadius * 2, // More rounded corners
+  boxShadow: theme.shadows[8], // Slightly more prominent shadow
+>>>>>>> my-backup
   backgroundColor: theme.palette.background.paper,
 }));
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
+<<<<<<< HEAD
   margin: theme.spacing(1.5, 0, 2, 0), // Adjusted vertical spacing slightly
+=======
+  margin: theme.spacing(2, 0, 3, 0), // Increased vertical spacing
+>>>>>>> my-backup
   width: "100%",
 }));
 
 const StyledButton = styled(Button)(({ theme }) => ({
+<<<<<<< HEAD
   padding: theme.spacing(1.5, 4),
   fontSize: "1rem",
   fontWeight: 600,
@@ -48,6 +65,13 @@ const LogoText = styled(Typography)(({ theme }) => ({
   "&:hover": {
     color: theme.palette.primary.dark, // Darken on hover for feedback
   },
+=======
+  padding: theme.spacing(1.5, 4), // More padding
+  fontSize: "1rem",
+  fontWeight: 600, // Semi-bold text
+  borderRadius: theme.shape.borderRadius * 2,
+  margin: theme.spacing(3, 0, 2, 0),
+>>>>>>> my-backup
 }));
 
 function LoginPage() {
@@ -66,6 +90,7 @@ function LoginPage() {
 
     try {
       const { user } = await signIn(email, password);
+<<<<<<< HEAD
       console.log("Login successful", user);
       // Redirect to the intended page after login.
       // If the user was trying to access a protected route, they might be redirected there.
@@ -78,6 +103,12 @@ function LoginPage() {
       setError(
         err.message || "Failed to sign in. Please check your credentials."
       );
+=======
+      navigate("/"); // Redirect to home page after login
+    } catch (err) {
+      console.error("Login error:", err);
+      setError(err.message || "Failed to sign in. Please check your credentials.");
+>>>>>>> my-backup
     } finally {
       setLoading(false);
     }
@@ -89,6 +120,7 @@ function LoginPage() {
       justifyContent="center"
       alignItems="center"
       minHeight="100vh"
+<<<<<<< HEAD
       bgcolor={theme.palette.background.default}
     >
       <StyledPaper>
@@ -105,12 +137,25 @@ function LoginPage() {
           Sign In
         </Typography>
 
+=======
+      bgcolor={theme.palette.background.default} // Use theme background
+    >
+      <StyledPaper>
+        <Typography variant="h4" gutterBottom color="primary">
+          Sign In
+        </Typography>
+        
+>>>>>>> my-backup
         {error && (
           <Alert severity="error" sx={{ width: "100%", mb: 2 }}>
             {error}
           </Alert>
         )}
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> my-backup
         <form onSubmit={handleSubmit} style={{ width: "100%" }}>
           <StyledTextField
             label="Email Address"
@@ -119,7 +164,11 @@ function LoginPage() {
             onChange={(e) => setEmail(e.target.value)}
             required
             InputProps={{
+<<<<<<< HEAD
               startAdornment: <Person color="action" sx={{ mr: 1 }} />,
+=======
+              startAdornment: <Person color="action" sx={{ mr: 1 }} />, // Add some spacing
+>>>>>>> my-backup
             }}
             disabled={loading}
           />
@@ -130,7 +179,11 @@ function LoginPage() {
             onChange={(e) => setPassword(e.target.value)}
             required
             InputProps={{
+<<<<<<< HEAD
               startAdornment: <Lock color="action" sx={{ mr: 1 }} />,
+=======
+              startAdornment: <Lock color="action" sx={{ mr: 1 }} />, // Add some spacing
+>>>>>>> my-backup
             }}
             disabled={loading}
           />
@@ -146,12 +199,16 @@ function LoginPage() {
           <Box mt={2} textAlign="center">
             <Typography variant="body2" color="text.secondary">
               Don't have an account?{" "}
+<<<<<<< HEAD
               <Link
                 component={RouterLink}
                 to="/signup"
                 variant="subtitle2" // Keep if you like the slightly bolder look for links
                 color="primary"
               >
+=======
+              <Link component={RouterLink} to="/signup" variant="subtitle2" color="primary">
+>>>>>>> my-backup
                 Create one
               </Link>
             </Typography>

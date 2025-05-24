@@ -26,10 +26,7 @@ import {
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import { supabase } from "../lib/supabase";
-<<<<<<< HEAD
-=======
 import {updatePortfolioSnapshot} from "./../lib/updateSnapshot"
->>>>>>> my-backup
 
 const VisuallyHiddenInput = styled("input")({
   clip: "rect(0 0 0 0)",
@@ -180,20 +177,12 @@ const BrokerCSVUploader = ({ onUploadComplete, brokerName }) => {
 
   const saveToDatabase = async () => {
     if (!parsedData.length) return;
-<<<<<<< HEAD
-
-=======
->>>>>>> my-backup
     setLoading(true);
     setError(null);
 
     try {
       // Get the current user
       const { data: { user } } = await supabase.auth.getUser();
-<<<<<<< HEAD
-      
-=======
->>>>>>> my-backup
       if (!user) {
         throw new Error("You must be logged in to upload data");
       }
@@ -206,10 +195,6 @@ const BrokerCSVUploader = ({ onUploadComplete, brokerName }) => {
         .single();
 
       let brokerId;
-<<<<<<< HEAD
-
-=======
->>>>>>> my-backup
       if (brokerError || !brokerData) {
         // Create the broker
         const { data: newBroker, error: createBrokerError } = await supabase
@@ -293,10 +278,7 @@ const BrokerCSVUploader = ({ onUploadComplete, brokerName }) => {
       // Call the callback to notify parent component
       if (onUploadComplete) {
         onUploadComplete(parsedData);
-<<<<<<< HEAD
-=======
         updatePortfolioSnapshot(user.id)
->>>>>>> my-backup
       }
       
     } catch (err) {
@@ -337,11 +319,7 @@ const BrokerCSVUploader = ({ onUploadComplete, brokerName }) => {
           >
             <UploadIcon sx={{ fontSize: 48, color: "primary.main", mb: 2 }} />
             <Typography variant="h6" align="center" gutterBottom>
-<<<<<<< HEAD
-              Drag & Drop or Select CSV File
-=======
               Drag & Drop or Select CSV File 
->>>>>>> my-backup
             </Typography>
             <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 3 }}>
               Upload a CSV file exported from {brokerName}

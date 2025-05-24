@@ -14,25 +14,9 @@ const reportSections = [
         route: "sold-securities",
       },
       {
-<<<<<<< HEAD
-        title: "Future Income",
-        description: "Forecasts upcoming dividend and interest payments.",
-        route: "future-income",
-      },
-    ],
-  },
-  {
-    category: "Asset Allocation",
-    reports: [
-      {
-        title: "Exposure",
-        description: "Shows portfolio exposure to sectors, markets, and asset classes.",
-        route: "exposure",
-=======
         title: "Performance",
         description: "Track portfolio performance over time.",
         route: "performance",
->>>>>>> my-backup
       },
     ],
   },
@@ -49,22 +33,15 @@ const reportSections = [
         description: "Summarizes dividend and interest payments for tax purposes.",
         route: "taxable-income",
       },
-<<<<<<< HEAD
-=======
       {
         title: "Historic Cost",
         description: "Displays the historic cost basis of investments.",
         route: "historic-cost",
       },
->>>>>>> my-backup
     ],
   },
 ];
 
-<<<<<<< HEAD
-=======
-
->>>>>>> my-backup
 function Reports() {
   const [selected, setSelected] = useState(null);
   const navigate = useNavigate();
@@ -101,11 +78,6 @@ function Reports() {
           <h2>{selected.title}</h2>
           <p>{selected.description}</p>
           <button onClick={handleRunReport}>Run Report</button>
-<<<<<<< HEAD
-          <button onClick={handleClose}>Back to all reports</button>
-=======
-
->>>>>>> my-backup
         </Modal>
       )}
     </div>

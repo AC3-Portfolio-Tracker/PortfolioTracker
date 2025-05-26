@@ -14,13 +14,22 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Button,
+  IconButton,
+  useTheme,
 } from "@mui/material";
+import { ArrowBack } from "@mui/icons-material";
+import FileDownloadIcon from "@mui/icons-material/FileDownload";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import * as XLSX from "xlsx";
 
 const AllTrades = () => {
   const [trades, setTrades] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState("All");
+  const navigate = useNavigate();
+  const theme = useTheme();
 
   useEffect(() => {
     const fetchTrades = async () => {
@@ -74,15 +83,48 @@ const AllTrades = () => {
   }, []);
 
   const filteredTrades =
-    filterType === "All"
-      ? trades
-      : trades.filter((t) => t.type === filterType);
+    filterType === "All" ? trades : trades.filter((t) => t.type === filterType);
+
+  const handleExport = () => {
+    const exportData = filteredTrades.map(({ symbol, date, type, qty, price, brokerage, exchRate, value }) => ({
+      Symbol: symbol,
+      Date: date,
+      Type: type,
+      Quantity: qty,
+      Price: price,
+      Brokerage: brokerage,
+      ExchangeRate: exchRate,
+      Value: value,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "AllTrades");
+    XLSX.writeFile(workbook, "All_Trades_Report.xlsx");
+  };
 
   return (
     <Box sx={{ p: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        All Trades
-      </Typography>
+      {/* ✅ Back to Reports + Bold Heading + Export Icon */}
+      <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
+        <Button
+          variant="outlined"
+          startIcon={<ArrowBack />}
+          onClick={() => navigate("/reports")}
+          sx={{ mr: 2 }}
+        >
+          Back to Reports
+        </Button>
+        <Typography variant="h4" fontWeight="bold" sx={{ flexGrow: 1 }}>
+          All Trades
+        </Typography>
+        <IconButton
+          onClick={handleExport}
+          sx={{ backgroundColor: "#90caf9", color: "white", p: 1.5, mr: 1 }}
+        >
+          <FileDownloadIcon />
+        </IconButton>
+      </Box>
 
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", my: 4 }}>
@@ -91,24 +133,25 @@ const AllTrades = () => {
       ) : (
         <>
           <FormControl
-            sx={{
+            sx={(theme) => ({
               minWidth: 220,
               mb: 3,
-              bgcolor: "#1e1e1e",
-              color: "white",
               "& .MuiInputBase-root": {
-                color: "white",
+                color: theme.palette.text.primary,
+                backgroundColor: theme.palette.background.paper,
               },
               "& .MuiSvgIcon-root": {
-                color: "white",
+                color: theme.palette.text.primary,
               },
               "& .MuiOutlinedInput-notchedOutline": {
-                borderColor: "white",
+                borderColor: theme.palette.divider,
               },
               "& .MuiInputLabel-root": {
-                color: "white",
+                color: theme.palette.text.secondary,
+                backgroundColor: theme.palette.background.paper,
+                px: 0.5,
               },
-            }}
+            })}
             size="small"
           >
             <InputLabel id="type-filter-label">Filter by Type</InputLabel>
@@ -121,7 +164,6 @@ const AllTrades = () => {
               <MenuItem value="All">All Transactions</MenuItem>
               <MenuItem value="Buy">Buy</MenuItem>
               <MenuItem value="Sell">Sell</MenuItem>
-              
             </Select>
           </FormControl>
 
@@ -167,12 +209,8 @@ const AllTrades = () => {
                           {t.type}
                         </TableCell>
                         <TableCell align="right">{t.qty}</TableCell>
-                        <TableCell align="right">
-                          ${t.price.toFixed(2)}
-                        </TableCell>
-                        <TableCell align="right">
-                          ${t.brokerage.toFixed(2)}
-                        </TableCell>
+                        <TableCell align="right">${t.price.toFixed(2)}</TableCell>
+                        <TableCell align="right">${t.brokerage.toFixed(2)}</TableCell>
                         <TableCell align="center">{t.exchRate}</TableCell>
                         <TableCell
                           align="right"

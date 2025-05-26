@@ -1,7 +1,6 @@
-// src/pages/Reports.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "../components/Reports.css"; // your CSS is in components
+import { Box, Typography, Paper, Button, Grid, useTheme } from "@mui/material";
 import Modal from "../components/Modal";
 
 const reportSections = [
@@ -23,15 +22,15 @@ const reportSections = [
   {
     category: "Tax & Compliance",
     reports: [
-  //    {
-  //      title: "All Trades",
-  //      description: "Lists all trades over the selected date range.",
-  //      route: "all-trades",
-  //    },
+{
+       title: "Taxable Income",
+      description: "Summarizes dividend and interest payments for tax purposes.",
+       route: "taxable-income",
+     },
       {
-        title: "Taxable Income",
-        description: "Summarizes dividend and interest payments for tax purposes.",
-        route: "taxable-income",
+        title: "All Trades",
+        description: "Lists all trades over the selected date range.",
+        route: "all-trades",
       },
       {
         title: "Historic Cost",
@@ -45,6 +44,7 @@ const reportSections = [
 function Reports() {
   const [selected, setSelected] = useState(null);
   const navigate = useNavigate();
+  const theme = useTheme();
 
   const handleOpen = (report) => setSelected(report);
   const handleClose = () => setSelected(null);
@@ -56,21 +56,62 @@ function Reports() {
   };
 
   return (
-    <div className="reports-container">
-      <h1 className="reports-title">Reports</h1>
+    <Box sx={{ px: 4, py: 6 }}>
+      <Typography variant="h4" gutterBottom fontWeight="bold">
+        Reports
+      </Typography>
+
       {reportSections.map((section, idx) => (
-        <div key={idx}>
-          <h2 className="category-title">{section.category}</h2>
-          <div className="report-card-container">
+        <Box key={idx} sx={{ mb: 5 }}>
+          <Typography variant="h6" gutterBottom>
+            {section.category}
+          </Typography>
+          <Grid container spacing={3}>
             {section.reports.map((report, index) => (
-              <div key={index} className="report-card">
-                <h3>{report.title}</h3>
-                <p>{report.description}</p>
-                <button onClick={() => handleOpen(report)}>View Report</button>
-              </div>
+              <Grid item xs={12} sm={6} md={4} key={index}>
+                <Paper
+                  elevation={3}
+                  sx={{
+                    p: 3,
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    bgcolor:
+                      theme.palette.mode === "dark"
+                        ? "#1e1e1e"
+                        : theme.palette.background.paper,
+                    "&:hover": {
+                      boxShadow: 6,
+                      transform: "scale(1.02)",
+                      transition: "all 0.2s ease-in-out",
+                    },
+                  }}
+                >
+                  <Box>
+                    <Typography variant="subtitle1" fontWeight={600}>
+                      {report.title}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ mt: 1 }}
+                    >
+                      {report.description}
+                    </Typography>
+                  </Box>
+                  <Button
+                    variant="contained"
+                    onClick={() => handleOpen(report)}
+                    sx={{ mt: 3, alignSelf: "flex-start" }}
+                  >
+                    View Report
+                  </Button>
+                </Paper>
+              </Grid>
             ))}
-          </div>
-        </div>
+          </Grid>
+        </Box>
       ))}
 
       {selected && (
@@ -80,7 +121,7 @@ function Reports() {
           <button onClick={handleRunReport}>Run Report</button>
         </Modal>
       )}
-    </div>
+    </Box>
   );
 }
 

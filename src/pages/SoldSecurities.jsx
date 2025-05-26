@@ -1,24 +1,46 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
+import {
+  Typography,
+  CircularProgress,
+  Box,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Button,
+  IconButton,
+  Tooltip,
+  Stack,
+  useTheme,
+} from "@mui/material";
+import {
+  ArrowBack,
+  Download,
+} from "@mui/icons-material"; // ⬅️ Changed icon import
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
-
+import * as XLSX from "xlsx";
 
 const SoldSecurities = () => {
   const [securities, setSecurities] = useState([]);
   const [loading, setLoading] = useState(true);
+  const theme = useTheme();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchReport = async () => {
       setLoading(true);
-
-      const { data: userData, error: userError } = await supabase.auth.getUser();
+      const { data: userData } = await supabase.auth.getUser();
       const user = userData?.user;
       if (!user) {
         alert("You must be logged in.");
         return;
       }
 
-      // Fetch Sell activities
-      const { data: sellData, error: sellError } = await supabase
+      const { data: sellData } = await supabase
         .from("activities")
         .select(`
           id, type, date, quantity, price, total_amount, security_id, user_id,
@@ -27,13 +49,7 @@ const SoldSecurities = () => {
         .eq("type", "Sell")
         .eq("user_id", user.id);
 
-      if (sellError) {
-        console.error("Error fetching sell data:", sellError);
-        return;
-      }
-
-      // Fetch Dividend activities
-      const { data: dividendData, error: dividendError } = await supabase
+      const { data: dividendData } = await supabase
         .from("activities")
         .select(`
           id, type, date, quantity, price, total_amount, security_id, user_id,
@@ -42,12 +58,6 @@ const SoldSecurities = () => {
         .eq("type", "Dividend")
         .eq("user_id", user.id);
 
-      if (dividendError) {
-        console.error("Error fetching dividends:", dividendError);
-        return;
-      }
-
-      // Group dividends by symbol
       const dividendsMap = {};
       dividendData.forEach((div) => {
         const symbol = div.securities?.symbol || div.security_id;
@@ -55,13 +65,12 @@ const SoldSecurities = () => {
         dividendsMap[symbol] = (dividendsMap[symbol] || 0) + amount;
       });
 
-      // Group sell data by symbol
       const reportMap = {};
       sellData.forEach((sell) => {
         const symbol = sell.securities?.symbol || sell.security_id;
         const quantity = Math.abs(sell.quantity || 0);
         const value = sell.total_amount || ((sell.quantity || 0) * (sell.price || 0));
-        const capitalGain = value - 8; // example fee/cost basis, replace with actual logic
+        const capitalGain = value - 8; // Simplified logic
 
         if (!reportMap[symbol]) {
           reportMap[symbol] = { qty: 0, value: 0, capitalGain: 0 };
@@ -72,7 +81,6 @@ const SoldSecurities = () => {
         reportMap[symbol].capitalGain += capitalGain;
       });
 
-      // Final result for rendering
       const finalReport = Object.entries(reportMap).map(([symbol, data]) => {
         const dividend = dividendsMap[symbol] || 0;
         const totalReturn = data.capitalGain + dividend;
@@ -92,7 +100,6 @@ const SoldSecurities = () => {
     fetchReport();
   }, []);
 
-  // Calculate grand totals
   const totals = securities.reduce(
     (acc, s) => {
       acc.qty += s.qty;
@@ -104,45 +111,111 @@ const SoldSecurities = () => {
     { qty: 0, capitalGain: 0, dividend: 0, return: 0 }
   );
 
+  const exportToXLSX = () => {
+    const ws = XLSX.utils.json_to_sheet(securities);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Sold Securities");
+    XLSX.writeFile(wb, "sold_securities.xlsx");
+  };
+
   return (
-    <div className="p-8 text-white">
-      <h2 className="text-3xl font-bold mb-6">Sold Securities</h2>
+    <Box sx={{ p: 4 }}>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 3 }}>
+        <Box sx={{ display: "flex", alignItems: "center" }}>
+          <Button
+            variant="outlined"
+            startIcon={<ArrowBack />}
+            onClick={() => navigate("/reports")}
+            sx={{ mr: 2 }}
+          >
+            Back to Reports
+          </Button>
+          <Typography variant="h4" component="h1" fontWeight="bold">
+            Sold Securities
+          </Typography>
+        </Box>
+
+        {/* Styled Download Icon */}
+        <Stack direction="row" spacing={1}>
+          <Tooltip title="Download as XLSX">
+            <IconButton
+              onClick={exportToXLSX}
+              sx={{
+                backgroundColor: "#90caf9",
+                color: "#fff",
+                '&:hover': {
+                  backgroundColor: "#64b5f6",
+                },
+                width: 48,
+                height: 48,
+                borderRadius: "50%",
+              }}
+            >
+              <Download />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+      </Box>
+
       {loading ? (
-        <p>Loading...</p>
+        <Box sx={{ display: "flex", justifyContent: "center", my: 4 }}>
+          <CircularProgress />
+        </Box>
       ) : (
-        <div className="overflow-x-auto rounded-md shadow-md">
-          <table className="min-w-full border-separate border-spacing-x-6 border-spacing-y-2 text-sm bg-[#1e1e1e]">
-            <thead className="bg-gray-100 text-xs text-gray-700 uppercase">
-              <tr>
-                <th className="px-4 py-2 text-left">Symbol</th>
-                <th className="px-4 py-2 text-right">Qty</th>
-                <th className="px-4 py-2 text-right">Capital Gains</th>
-                <th className="px-4 py-2 text-right">Dividends</th>
-                <th className="px-4 py-2 text-right">Return</th>
-              </tr>
-            </thead>
-            <tbody>
-              {securities.map((s, i) => (
-                <tr key={i} className="hover:bg-gray-800">
-                  <td className="px-4 py-2 text-blue-400 font-medium">{s.symbol}</td>
-                  <td className="px-4 py-2 text-right">{s.qty}</td>
-                  <td className="px-4 py-2 text-right">${s.capitalGain.toFixed(2)}</td>
-                  <td className="px-4 py-2 text-right">${s.dividend.toFixed(2)}</td>
-                  <td className="px-4 py-2 text-right">${s.return.toFixed(2)}</td>
-                </tr>
-              ))}
-              <tr className="bg-[#161616] font-bold border-t border-gray-400">
-                <td className="px-4 py-2">Grand Total</td>
-                <td className="px-4 py-2 text-right">{totals.qty}</td>
-                <td className="px-4 py-2 text-right">${totals.capitalGain.toFixed(2)}</td>
-                <td className="px-4 py-2 text-right">${totals.dividend.toFixed(2)}</td>
-                <td className="px-4 py-2 text-right">${totals.return.toFixed(2)}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <Paper elevation={3}>
+          <TableContainer sx={{ maxHeight: 600 }}>
+            <Table stickyHeader>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Symbol</TableCell>
+                  <TableCell align="right">Quantity</TableCell>
+                  <TableCell align="right">Capital Gains</TableCell>
+                  <TableCell align="right">Dividends</TableCell>
+                  <TableCell align="right">Return</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {securities.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} align="center">
+                      No sold securities found.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  securities.map((s, i) => (
+                    <TableRow key={i} hover>
+                      <TableCell>{s.symbol}</TableCell>
+                      <TableCell align="right">{s.qty}</TableCell>
+                      <TableCell align="right">${s.capitalGain.toFixed(2)}</TableCell>
+                      <TableCell align="right">${s.dividend.toFixed(2)}</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 600 }}>
+                        ${s.return.toFixed(2)}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+                {securities.length > 0 && (
+                  <TableRow
+                    sx={{
+                      backgroundColor:
+                        theme.palette.mode === "dark" ? "#1f1f1f" : "#e0e0e0",
+                    }}
+                  >
+                    <TableCell><b>Grand Total</b></TableCell>
+                    <TableCell align="right"><b>{totals.qty}</b></TableCell>
+                    <TableCell align="right"><b>${totals.capitalGain.toFixed(2)}</b></TableCell>
+                    <TableCell align="right"><b>${totals.dividend.toFixed(2)}</b></TableCell>
+                    <TableCell align="right" sx={{ color: "success.light", fontWeight: 600 }}>
+                      ${totals.return.toFixed(2)}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
       )}
-    </div>
+    </Box>
   );
 };
 

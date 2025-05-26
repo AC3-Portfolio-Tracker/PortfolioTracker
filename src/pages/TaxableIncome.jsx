@@ -1,15 +1,35 @@
-import React, { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
+import React, { useEffect, useState } from "react";
+import {
+  Typography,
+  CircularProgress,
+  Box,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Button,
+  useTheme,
+  IconButton,
+  Tooltip,
+} from "@mui/material";
+import { ArrowBack, Download } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "../lib/supabase";
+import * as XLSX from "xlsx";
 
 const TaxableIncome = () => {
   const [incomeRows, setIncomeRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const theme = useTheme();
 
   useEffect(() => {
     const fetchDividendData = async () => {
       setLoading(true);
-
-      const { data: userData, error: userError } = await supabase.auth.getUser();
+      const { data: userData } = await supabase.auth.getUser();
       const user = userData?.user;
 
       if (!user) {
@@ -33,7 +53,7 @@ const TaxableIncome = () => {
       }
 
       const formatted = data.map((row) => {
-        const total = parseFloat(row.total_amount ?? (row.quantity * row.price) ?? 0);
+        const total = parseFloat(row.total_amount ?? row.quantity * row.price ?? 0);
         const franking = parseFloat(row.notes?.match(/\d+(\.\d+)?/)?.[0] ?? 0);
         return {
           holding: row.securities?.symbol || row.security_id,
@@ -60,66 +80,104 @@ const TaxableIncome = () => {
 
   const total = (key) => incomeRows.reduce((sum, r) => sum + r[key], 0);
 
+  const exportToExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(incomeRows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "TaxableIncome");
+    XLSX.writeFile(workbook, "TaxableIncomeReport.xlsx");
+  };
+
   return (
-    <div className="p-8 text-white">
-      <h2 className="text-3xl font-bold mb-6">Taxable Income</h2>
+    <Box sx={{ p: 4 }}>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 3 }}>
+        <Box sx={{ display: "flex", alignItems: "center" }}>
+          <Button
+            variant="outlined"
+            startIcon={<ArrowBack />}
+            onClick={() => navigate("/reports")}
+            sx={{ mr: 2 }}
+          >
+            Back to Reports
+          </Button>
+          <Typography variant="h4" component="h1" fontWeight="bold">
+            Taxable Income
+          </Typography>
+        </Box>
+        <Tooltip title="Download as XLSX">
+          <IconButton onClick={exportToExcel}>
+            <Download />
+          </IconButton>
+        </Tooltip>
+      </Box>
+
       {loading ? (
-        <p>Loading...</p>
+        <Box sx={{ display: "flex", justifyContent: "center", my: 4 }}>
+          <CircularProgress />
+        </Box>
       ) : (
-        <div className="overflow-x-auto rounded-lg shadow-md">
-          <table className="min-w-full text-left border-separate border-spacing-x-4 border-spacing-y-2">
-            <thead className="bg-gray-100 text-sm uppercase text-gray-700">
-              <tr>
-                <th className="px-4 py-3">Holding</th>
-                <th className="px-4 py-3">Paid Date</th>
-                <th className="px-4 py-3">Total Income</th>
-                <th className="px-4 py-3">Franked</th>
-                <th className="px-4 py-3">Unfranked</th>
-                <th className="px-4 py-3">Withholding Tax</th>
-                <th className="px-4 py-3">Franking Credits</th>
-                <th className="px-4 py-3">Gross Income</th>
-              </tr>
-            </thead>
-            <tbody className="text-sm">
-              {incomeRows.length === 0 ? (
-                <tr>
-                  <td colSpan="8" className="text-center py-4 text-gray-400">
-                    No income data available
-                  </td>
-                </tr>
-              ) : (
-                incomeRows.map((row, i) => (
-                  <tr key={i} className="hover:bg-gray-800">
-                    <td className="px-4 py-2 text-blue-400 font-medium">{row.holding}</td>
-                    <td className="px-4 py-2">{row.paidDate}</td>
-                    <td className="px-4 py-2">${row.totalIncome.toFixed(2)}</td>
-                    <td className="px-4 py-2">${row.franked.toFixed(2)}</td>
-                    <td className="px-4 py-2">${row.unfranked.toFixed(2)}</td>
-                    <td className="px-4 py-2">${row.withholdingTax.toFixed(2)}</td>
-                    <td className="px-4 py-2">${row.frankingCredits.toFixed(2)}</td>
-                    <td className="px-4 py-2 text-green-400 font-semibold">${row.grossIncome.toFixed(2)}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-            {incomeRows.length > 0 && (
-              <tfoot className="text-sm font-semibold text-white border-t border-gray-600">
-                <tr className="bg-[#0d0d0d]">
-                  <td className="px-4 py-2">Grand total</td>
-                  <td></td>
-                  <td className="px-4 py-2">${total("totalIncome").toFixed(2)}</td>
-                  <td className="px-4 py-2">${total("franked").toFixed(2)}</td>
-                  <td className="px-4 py-2">${total("unfranked").toFixed(2)}</td>
-                  <td className="px-4 py-2">${total("withholdingTax").toFixed(2)}</td>
-                  <td className="px-4 py-2">${total("frankingCredits").toFixed(2)}</td>
-                  <td className="px-4 py-2 text-green-400">${total("grossIncome").toFixed(2)}</td>
-                </tr>
-              </tfoot>
-            )}
-          </table>
-        </div>
+        <Paper elevation={3}>
+          <TableContainer sx={{ maxHeight: 600 }}>
+            <Table stickyHeader>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Holding</TableCell>
+                  <TableCell>Paid Date</TableCell>
+                  <TableCell align="right">Total Income</TableCell>
+                  <TableCell align="right">Franked</TableCell>
+                  <TableCell align="right">Unfranked</TableCell>
+                  <TableCell align="right">Withholding Tax</TableCell>
+                  <TableCell align="right">Franking Credits</TableCell>
+                  <TableCell align="right">Gross Income</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {incomeRows.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} align="center">
+                      No income data available
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  incomeRows.map((row, i) => (
+                    <TableRow key={i} hover>
+                      <TableCell>{row.holding}</TableCell>
+                      <TableCell>{row.paidDate}</TableCell>
+                      <TableCell align="right">${row.totalIncome.toFixed(2)}</TableCell>
+                      <TableCell align="right">${row.franked.toFixed(2)}</TableCell>
+                      <TableCell align="right">${row.unfranked.toFixed(2)}</TableCell>
+                      <TableCell align="right">${row.withholdingTax.toFixed(2)}</TableCell>
+                      <TableCell align="right">${row.frankingCredits.toFixed(2)}</TableCell>
+                      <TableCell align="right" style={{ color: "lightgreen", fontWeight: 600 }}>
+                        ${row.grossIncome.toFixed(2)}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+
+                {incomeRows.length > 0 && (
+                  <TableRow
+                    sx={(theme) => ({
+                      backgroundColor: theme.palette.mode === "dark" ? "#1f1f1f" : "#e0e0e0",
+                    })}
+                  >
+                    <TableCell><b>Total</b></TableCell>
+                    <TableCell />
+                    <TableCell align="right"><b>${total("totalIncome").toFixed(2)}</b></TableCell>
+                    <TableCell align="right"><b>${total("franked").toFixed(2)}</b></TableCell>
+                    <TableCell align="right"><b>${total("unfranked").toFixed(2)}</b></TableCell>
+                    <TableCell align="right"><b>${total("withholdingTax").toFixed(2)}</b></TableCell>
+                    <TableCell align="right"><b>${total("frankingCredits").toFixed(2)}</b></TableCell>
+                    <TableCell align="right" sx={{ color: "lightgreen", fontWeight: 600 }}>
+                      ${total("grossIncome").toFixed(2)}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
       )}
-    </div>
+    </Box>
   );
 };
 

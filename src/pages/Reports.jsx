@@ -23,11 +23,11 @@ const reportSections = [
   {
     category: "Tax & Compliance",
     reports: [
-      {
-        title: "All Trades",
-        description: "Lists all trades over the selected date range.",
-        route: "all-trades",
-      },
+  //    {
+  //      title: "All Trades",
+  //      description: "Lists all trades over the selected date range.",
+  //      route: "all-trades",
+  //    },
       {
         title: "Taxable Income",
         description: "Summarizes dividend and interest payments for tax purposes.",

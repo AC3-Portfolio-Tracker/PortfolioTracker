@@ -2,18 +2,29 @@
 .modal-backdrop {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.615);
     display: flex;
     justify-content: center;
     align-items: center;
   }
-  .modal-box {
-    background: black;
-    padding: 20px;
-    border-radius: 10px;
-    width: 400px;
-    max-width: 90%;
-  }
+/* Default (Light mode) */
+.modal-box {
+  background-color: #ffffff;
+  color: #000000;
+  padding: 20px;
+  border-radius: 10px;
+  width: 400px;
+  max-width: 90%;
+}
+
+/* Dark mode override */
+body.dark .modal-box,
+html.dark .modal-box,
+[data-theme="dark"] .modal-box {
+  background-color: #1a1a1a;
+  color: #ffffff;
+}
+
   .modal-close {
     float: right;
     background: none;

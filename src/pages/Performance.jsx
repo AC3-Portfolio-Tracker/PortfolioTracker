@@ -96,7 +96,22 @@ const PerformancePage = () => {
     setFilteredData(aggregated);
   }, [granularity, snapshots]);
 
-  const latest = filteredData[filteredData.length - 1]?.value || 0;
+  // Total value logic for all granularities
+  let latest = 0;
+
+  if (granularity === "1D") {
+    latest = filteredData.reduce((sum, d) => sum + d.value, 0);
+  } else if (granularity === "1W") {
+    latest = filteredData.reduce((sum, d) => sum + d.value, 0);
+  } else if (granularity === "1M") {
+    latest = filteredData.reduce((sum, d) => sum + d.value, 0);
+  } else if (granularity === "1Y") {
+    latest = filteredData.reduce((sum, d) => sum + d.value, 0);
+  } else {
+    // "ALL"
+    latest = filteredData.reduce((sum, d) => sum + d.value, 0);
+  }
+
   const start = filteredData[0]?.value || 0;
   const change = latest - start;
   const percentChange = start ? (change / start) * 100 : 0;
@@ -123,10 +138,20 @@ const PerformancePage = () => {
           width: "100%",
         }}
       >
-        <Typography variant="h5">${latest.toFixed(2)}</Typography>
-        <Typography
-          sx={{ color: change >= 0 ? "#4caf50" : "#f44336" }}
-        >
+        <Typography variant="h5">
+          {granularity === "1D"
+            ? "Today's Total: "
+            : granularity === "1W"
+            ? "This Week's Total: "
+            : granularity === "1M"
+            ? "This Month's Total: "
+            : granularity === "1Y"
+            ? "This Year's Total: "
+            : "Total: "}
+          ${latest.toFixed(2)}
+        </Typography>
+
+        <Typography sx={{ color: change >= 0 ? "#4caf50" : "#f44336" }}>
           {change.toFixed(2)} {change >= 0 ? "↑" : "↓"}{" "}
           {percentChange.toFixed(2)}%
         </Typography>

@@ -15,6 +15,7 @@ import {
   Button,
   Stack,
   Paper,
+  useTheme,
 } from "@mui/material";
 import dayjs from "dayjs";
 import groupBy from "lodash.groupby";
@@ -23,6 +24,8 @@ const PerformancePage = () => {
   const [snapshots, setSnapshots] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [granularity, setGranularity] = useState("1D");
+
+  const theme = useTheme(); // Access system theme
 
   useEffect(() => {
     const fetchSnapshots = async () => {
@@ -53,6 +56,16 @@ const PerformancePage = () => {
     if (!snapshots.length) return;
 
     let grouped;
+
+    if (granularity === "1D") {
+      const today = dayjs().format("YYYY-MM-DD");
+      const todayData = snapshots.filter((s) =>
+        dayjs(s.date).isSame(today, "day")
+      );
+      setFilteredData(todayData);
+      return;
+    }
+
     switch (granularity) {
       case "1W":
         grouped = groupBy(snapshots, (s) =>
@@ -69,7 +82,7 @@ const PerformancePage = () => {
           dayjs(s.date).format("YYYY")
         );
         break;
-      default: // "1D" or "ALL"
+      default: // "ALL"
         setFilteredData(snapshots);
         return;
     }
@@ -124,25 +137,23 @@ const PerformancePage = () => {
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={filteredData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-               <XAxis
-  dataKey="date"
-  stroke="#aaa"
-  tickFormatter={(tick) => {
-    //  Format X-axis labels based on granularity
-    switch (granularity) {
-      case "1Y":
-        return dayjs(tick).format("YYYY"); 
-      case "1M":
-        return dayjs(tick).format("MMM YYYY"); 
-      case "1W":
-      case "1D":
-      default:
-        return dayjs(tick).format("MMM D"); 
-    }
-  }}
-  minTickGap={20}
-/>
-
+                <XAxis
+                  dataKey="date"
+                  stroke="#aaa"
+                  tickFormatter={(tick) => {
+                    switch (granularity) {
+                      case "1Y":
+                        return dayjs(tick).format("YYYY");
+                      case "1M":
+                        return dayjs(tick).format("MMM YYYY");
+                      case "1W":
+                      case "1D":
+                      default:
+                        return dayjs(tick).format("MMM D");
+                    }
+                  }}
+                  minTickGap={20}
+                />
                 <YAxis
                   stroke="#aaa"
                   label={{
@@ -159,11 +170,15 @@ const PerformancePage = () => {
                 />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: "#333",
-                    border: "none",
-                    color: "#fff",
+                    backgroundColor: theme.palette.background.paper,
+                    border: `1px solid ${theme.palette.divider}`,
+                    color: theme.palette.text.primary,
                   }}
-                  labelStyle={{ color: "#ccc" }}
+                  labelStyle={{ color: theme.palette.text.secondary }}
+                  formatter={(value) => [`$${value.toFixed(2)}`, "Value"]}
+                  labelFormatter={(label) =>
+                    `Date: ${dayjs(label).format("YYYY-MM-DD")}`
+                  }
                 />
                 <Line
                   type="monotone"

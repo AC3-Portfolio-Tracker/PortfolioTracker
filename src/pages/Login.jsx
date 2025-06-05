@@ -8,8 +8,9 @@ import {
   Link,
   // IconButton, // Not used
   Alert,
+  Divider,
 } from "@mui/material";
-import { Lock, Person } from "@mui/icons-material"; // Keeping original icons
+import { Lock, Person, Google } from "@mui/icons-material"; // Added Google icon
 import { styled } from "@mui/material/styles";
 import { useTheme } from "@mui/material/styles";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
@@ -57,7 +58,7 @@ function LoginPage() {
   const [error, setError] = useState(null);
   const theme = useTheme();
   const navigate = useNavigate();
-  const { signIn } = useAuth();
+  const { signIn, signInWithGoogle } = useAuth();
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -79,6 +80,21 @@ function LoginPage() {
         err.message || "Failed to sign in. Please check your credentials."
       );
     } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const { data } = await signInWithGoogle();
+      console.log("Google login initiated", data);
+      // The redirect will be handled by Google OAuth
+    } catch (err) {
+      console.error("Google login error:", err);
+      setError(err.message || "Failed to sign in with Google.");
       setLoading(false);
     }
   };
@@ -142,6 +158,20 @@ function LoginPage() {
           >
             {loading ? "Signing In..." : "Log In"}
           </StyledButton>
+          
+          <Divider sx={{ my: 2 }}>OR</Divider>
+          
+          <StyledButton
+            variant="outlined"
+            color="primary"
+            fullWidth
+            disabled={loading}
+            onClick={handleGoogleSignIn}
+            startIcon={<Google />}
+          >
+            Sign in with Google
+          </StyledButton>
+          
           <Box mt={2} textAlign="center">
             <Typography variant="body2" color="text.secondary">
               Don't have an account?{" "}

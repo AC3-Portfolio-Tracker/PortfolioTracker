@@ -145,7 +145,7 @@ function Header() {
             >
               <MenuItem onClick={handleClose} disabled>
                 <Typography variant="body2" color="text.secondary">
-                  {user?.email}
+                {user?.user_metadata?.display_name || user?.email || "User"}
                 </Typography>
               </MenuItem>
               <Divider />

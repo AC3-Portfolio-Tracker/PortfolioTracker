@@ -22,6 +22,8 @@ function SettingsPage() {
     theme: "dark",
     notification_preferences: {},
   });
+  // Add local state for profile data
+  const [localProfile, setLocalProfile] = useState(null);
   const [currencies, setCurrencies] = useState([
     { code: "USD", name: "United States Dollar" },
     { code: "EUR", name: "Euro" },
@@ -37,8 +39,16 @@ function SettingsPage() {
   const [newExchangeRate, setNewExchangeRate] = useState({ currency: "", rate: "" });
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-  const { user } = useAuth();
+  // Get user, profile, and updateProfile from AuthContext
+  const { user, profile, updateProfile } = useAuth();
   const { mode, setThemeMode } = useTheme();
+
+  // Initialize local profile state when profile from context changes
+  useEffect(() => {
+    if (profile) {
+      setLocalProfile(profile);
+    }
+  }, [profile]);
 
   useEffect(() => {
     // Check if we have a specific tab to activate from navigation state
@@ -461,16 +471,68 @@ function SettingsPage() {
                 {/* Display user information */}
                 <div className="user-info">
                   <p><strong>Email:</strong> {user?.email}</p>
+                  
+                  {/* Add form for editing first name and last name */}
+                  <div className="profile-edit-form">
+                    <h4>Edit Profile</h4>
+                    <TextField
+                      label="First Name"
+                      value={localProfile?.first_name || ""}
+                      onChange={(e) => setLocalProfile({...localProfile, first_name: e.target.value})}
+                      fullWidth
+                      variant="outlined"
+                      margin="normal"
+                    />
+                    <TextField
+                      label="Last Name"
+                      value={localProfile?.last_name || ""}
+                      onChange={(e) => setLocalProfile({...localProfile, last_name: e.target.value})}
+                      fullWidth
+                      variant="outlined"
+                      margin="normal"
+                    />
+                    <Button 
+                      variant="contained" 
+                      color="primary" 
+                      onClick={async () => {
+                        try {
+                          setSaving(true);
+                          setError(null);
+                          setSuccess(null);
+                          
+                          await updateProfile({
+                            first_name: localProfile.first_name,
+                            last_name: localProfile.last_name
+                          });
+                          
+                          setSuccess("Profile updated successfully");
+                        } catch (err) {
+                          console.error("Error updating profile:", err);
+                          setError("Failed to update profile. Please try again.");
+                        } finally {
+                          setSaving(false);
+                        }
+                      }}
+                      disabled={saving}
+                    >
+                      {saving ? <CircularProgress size={24} /> : "Update Profile"}
+                    </Button>
+                  </div>
+                  
+                  <div className="account-management">
+                    <h4>Account Management</h4>
+                    <p>Manage your account details, password, and security settings.</p>
+                    <Button 
+                      variant="outlined" 
+                      color="primary"
+                      href="https://app.supabase.com/project/your-project-id/auth/users"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Manage Account on Supabase
+                    </Button>
+                  </div>
                 </div>
-                
-                <Button 
-                  variant="outlined" 
-                  color="primary" 
-                  onClick={() => window.open('https://supabase.com/dashboard/project/wpaqgnxpzktnsppagtyr/auth/users', '_blank')}
-                  sx={{ mt: 2 }}
-                >
-                  Manage Account Details
-                </Button>
               </div>
             )}
           </div>

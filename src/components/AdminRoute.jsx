@@ -1,29 +1,32 @@
+// AdminRoute.jsx
+
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { CircularProgress, Box } from '@mui/material'; // For loading state
 
-/**
- * AdminRoute component that redirects non-admin users to the home page
- * This is used to protect admin-only routes
- */
 const AdminRoute = ({ children }) => {
   const { isAuthenticated, user, loading } = useAuth();
   
-  // If auth is still loading, show nothing
   if (loading) {
-    return null;
+    // Optional: Show a loading indicator while auth state is being determined
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    );
   }
   
-  // Check if the user is authenticated and has admin role
-  const isAdmin = isAuthenticated && user?.role === 'admin';
+  // Check if the user is authenticated and their profile indicates they are an admin
+  // This assumes your AuthContext provides user.profile.is_admin
+  const isAdmin = isAuthenticated && user?.profile?.is_admin === true; 
   
-  // If user is not an admin, redirect to home
   if (!isAdmin) {
-    return <Navigate to="/home" replace />;
+    // If not authenticated or not an admin, redirect to home or login
+    return <Navigate to={isAuthenticated ? "/home" : "/login"} replace />;
   }
   
-  // Otherwise, render the protected admin component
   return children;
 };
 
-export default AdminRoute; 
+export default AdminRoute;

@@ -1,293 +1,161 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import { supabase, auth as supabaseAuth, profiles } from '../lib/supabase';
+// AuthContext.jsx (Corrected with useRef)
 
-// Create the auth context
-const AuthContext = createContext();
+import React, { createContext, useState, useEffect, useContext, useRef } from 'react'; // Added useRef
+import { supabase } from '../lib/supabase'; // Adjust path as needed
 
-// Custom hook to use the auth context
-export function useAuth() {
-  return useContext(AuthContext);
-}
+const AuthContext = createContext(null);
 
-// Auth provider component
-export function AuthProvider({ children }) {
+export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const authListenerRef = useRef(null); // Use a ref for the subscription
 
-  // Effect to handle auth state changes
   useEffect(() => {
-    // Get the current session when the provider loads
-    const initializeAuth = async () => {
-      setLoading(true);
+    setLoading(true); // Set loading true at the start of the effect
+
+    const fetchUserProfile = async (currentAuthUser) => {
+      if (!currentAuthUser) {
+        setProfile(null);
+        return null;
+      }
       try {
-        // Get the current session
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          throw error;
+        const { data: userProfile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', currentAuthUser.id)
+          .single();
+
+        if (profileError) {
+          console.error('Error fetching profile:', profileError);
+          setProfile(null);
+          return null;
         }
-        
-        if (session?.user) {
-          const { data: userData, error: userError } = await supabase.auth.getUser();
-          if (userError) throw userError;
-          
-          setUser(userData.user);
+        setProfile(userProfile);
+        return userProfile;
+      } catch (e) {
+        console.error('Exception fetching profile:', e);
+        setProfile(null);
+        return null;
+      }
+    };
+
+    // Listener for auth state changes
+    // The 'data' object from onAuthStateChange contains the subscription
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        // setLoading(true) here might be too frequent if auth state changes rapidly
+        // It's better to manage loading around initial session check and sign-in/out operations.
+        const currentAuthUser = session?.user;
+        const userProfileData = await fetchUserProfile(currentAuthUser);
+
+        if (currentAuthUser) {
+          setUser({ ...currentAuthUser, profile: userProfileData });
           setIsAuthenticated(true);
-          
-          const { data: profileData, error: profileError } = await profiles.getProfile(session.user.id);
-          
-          if (profileError) {
-            console.error('Error fetching profile during init:', profileError);
-            // Potentially set profile to a default or null, and set an error state
-            setProfile(null); 
-          } else {
-            setProfile(profileData);
-          }
         } else {
           setUser(null);
+          // profile is set by fetchUserProfile
           setIsAuthenticated(false);
-          setProfile(null);
         }
-      } catch (err) {
-        console.error('Error during initial authentication:', err);
-        setError(err);
-        setUser(null);
-        setIsAuthenticated(false);
-        setProfile(null); // Ensure profile is cleared on error during init
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    initializeAuth();
-
-    // Subscribe to auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        // Refactored to avoid direct async callback and potential deadlocks
-        // All Supabase calls are dispatched after the main callback finishes
-        setTimeout(async () => {
-          try {
-            if (event === 'INITIAL_SESSION') {
-              // setLoading(true); // initializeAuth will handle this
-              await initializeAuth(); 
-            } else if (event === 'SIGNED_IN' && session?.user) {
-              setLoading(true);
-              const { data: { user: authUser }, error: userError } = await supabase.auth.getUser();
-              if (userError) throw userError;
-              
-              setUser(authUser);
-              setIsAuthenticated(true);
-              
-              const { data: profileData, error: profileError } = await profiles.getProfile(session.user.id);
-              if (profileError) {
-                console.error('Error fetching profile on SIGNED_IN:', profileError);
-                setProfile(null); 
-              } else {
-                setProfile(profileData);
-              }
-              setLoading(false);
-            } else if (event === 'USER_UPDATED' && session?.user) {
-              setLoading(true);
-              const { data: { user: updatedAuthUser }, error: userError } = await supabase.auth.getUser();
-              if (userError) throw userError;
-
-              setUser(updatedAuthUser);
-              setIsAuthenticated(true);
-              
-              // Fetch profile from 'profiles' table first
-              const { data: profileData, error: profileError } = await profiles.getProfile(session.user.id);
-              if (profileError) {
-                console.error('Error fetching profile on USER_UPDATED:', profileError, 'User:', updatedAuthUser);
-                // Fallback to user_metadata if profile fetch fails
-                if (updatedAuthUser?.user_metadata && (updatedAuthUser.user_metadata.first_name || updatedAuthUser.user_metadata.last_name)) {
-                  console.log('Falling back to user_metadata for profile on USER_UPDATED');
-                  setProfile({
-                    id: session.user.id,
-                    email: session.user.email,
-                    first_name: updatedAuthUser.user_metadata.first_name,
-                    last_name: updatedAuthUser.user_metadata.last_name,
-                    avatar_url: updatedAuthUser.user_metadata.avatar_url,
-                    // Ensure all relevant fields from 'profiles' are here or handled
-                  });
-                } else {
-                  // If no profile and no metadata, consider setting profile to null or keeping existing
-                  // setProfile(null); // Or handle as per application logic
-                }
-              } else {
-                setProfile(profileData);
-              }
-              setLoading(false);
-            } else if (event === 'TOKEN_REFRESHED' || event === 'PASSWORD_RECOVERY') {
-              if (session?.user) {
-                const { data: { user: refreshedUser }, error: userError } = await supabase.auth.getUser();
-                if (userError) {
-                  console.error('Error fetching user on TOKEN_REFRESHED/PASSWORD_RECOVERY:', userError);
-                } else {
-                  setUser(refreshedUser);
-                  setIsAuthenticated(true); 
-                }
-              }
-            }
-          } catch (err) {
-            console.error('Error in onAuthStateChange (async part):', err);
-            setUser(null);
-            setIsAuthenticated(false);
-            setProfile(null);
-            setError(err);
-            setLoading(false); // Ensure loading is false on error
-          } 
-        }, 0);
-
-        // Synchronous part of the callback (e.g., for SIGNED_OUT)
-        if (event === 'SIGNED_OUT') {
-          setLoading(true);
-          setUser(null);
-          setIsAuthenticated(false);
-          setProfile(null);
-          setLoading(false);
-        }
+        // setLoading(false) here might also be too frequent.
+        // The initial setLoading(false) should happen after getInitialSession.
       }
     );
+    
+    // Store the subscription in the ref
+    authListenerRef.current = subscription;
 
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        console.log('Tab is visible, re-initializing auth.');
-        initializeAuth();
-      }
-    };
+    // Check initial session
+    async function getInitialSession() {
+        // setLoading(true) is already at the top of useEffect
+        try {
+            const { data: { session } , error: sessionError} = await supabase.auth.getSession();
+            if (sessionError) {
+                console.error("Error getting initial session:", sessionError);
+                // No need to set user/profile/auth state here, listener will handle if it changes
+                return; // Keep loading true until listener potentially fires or we determine no session
+            }
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    // Cleanup subscription and event listener on unmount
-    return () => {
-      subscription?.unsubscribe();
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, []); // Empty dependency array ensures this runs once on mount and cleans up on unmount
-
-  // Sign up function
-  const signUp = async (email, password, userData) => {
-    try {
-      const { data, error } = await supabaseAuth.signUp(email, password, userData);
-      if (error) throw error;
-      return data;
-    } catch (err) {
-      setError(err);
-      throw err;
-    }
-  };
-
-  // Sign in function
-  const signIn = async (email, password) => {
-    try {
-      const { data, error } = await supabaseAuth.signIn(email, password);
-      if (error) throw error;
-      return data;
-    } catch (err) {
-      setError(err);
-      throw err;
-    }
-  };
-
-  // Sign in with Google function
-  const signInWithGoogle = async () => {
-    try {
-      const { data, error } = await supabaseAuth.signInWithGoogle();
-      if (error) throw error;
-      return data;
-    } catch (err) {
-      setError(err);
-      throw err;
-    }
-  };
-
-  // Sign out function
-  const signOut = async () => {
-    try {
-      const { error } = await supabaseAuth.signOut();
-      if (error) throw error;
-      setUser(null);
-      setIsAuthenticated(false);
-      setProfile(null);
-    } catch (err) {
-      setError(err);
-      throw err;
-    }
-  };
-
-  // Update profile function
-  const updateProfile = async (userId, rawUpdates) => {
-    setLoading(true);
-    setError(null);
-    const updates = rawUpdates || {}; // Ensure updates is an object
-
-    try {
-      // Update Supabase Auth user (auth.users table)
-      // Ensure 'data' field in updates is correctly structured for supabase.auth.updateUser
-      const { data: authUser, error: authError } = await supabase.auth.updateUser({
-        data: { 
-          first_name: updates.first_name, 
-          last_name: updates.last_name,
-          // any other metadata fields you want to update in auth.users.user_metadata
+            // If there's a session, the onAuthStateChange listener will usually fire.
+            // However, it's good practice to set state here too for the initial load,
+            // especially if onAuthStateChange might not fire immediately or if it's a very new session.
+            if (session?.user) {
+                const currentAuthUser = session.user;
+                const userProfileData = await fetchUserProfile(currentAuthUser);
+                setUser({ ...currentAuthUser, profile: userProfileData });
+                setIsAuthenticated(true);
+            } else {
+                // If no session, ensure states are null/false
+                setUser(null);
+                setProfile(null);
+                setIsAuthenticated(false);
+            }
+        } catch (e) {
+            console.error("Exception in getInitialSession:", e);
+            setUser(null);
+            setProfile(null);
+            setIsAuthenticated(false);
+        } finally {
+            setLoading(false); // Crucial: set loading to false after initial check completes
         }
-      });
-
-      if (authError) {
-        console.error('Error updating Supabase auth user:', authError);
-        throw authError;
-      }
-
-      // Update the public.profiles table
-      const { data: profileData, error: profileError } = await profiles.updateProfile(userId, updates);
-
-      if (profileError) {
-        console.error('Error updating profile table:', profileError);
-        // Decide if you want to throw or just log and continue with authUser data
-        // For now, we'll prioritize the profile table update for the local state
-        // but this depends on application requirements.
-        throw profileError; 
-      }
-
-      // If profileData is what you expect for local state, use it.
-      // Otherwise, you might want to merge or use authUser.user for local state.
-      setProfile(profileData); // This should be the data from 'profiles' table
-      setUser(authUser.user); // Update local user state with the response from supabase.auth.updateUser
-      setIsAuthenticated(true);
-
-      return { authUser, profileData };
-    } catch (err) {
-      console.error('Error in updateProfile:', err);
-      setError(err);
-      // Potentially revert optimistic updates or handle UI feedback
-      throw err;
-    } finally {
-      setLoading(false);
     }
-  };
+    getInitialSession();
 
-  // Context value
+
+    // Cleanup function
+    return () => {
+      if (authListenerRef.current) {
+        authListenerRef.current.unsubscribe();
+      }
+    };
+  }, []); // Empty dependency array: run once on mount, cleanup on unmount
+
   const value = {
     user,
     profile,
-    loading,
-    error,
-    signUp,
-    signIn,
-    signInWithGoogle,
-    signOut,
-    updateProfile,
     isAuthenticated,
+    loading,
+    signOut: async () => {
+        // setLoading(true); // Optional: set loading true during sign out
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+            console.error("Sign out error", error);
+            // setLoading(false); // Reset loading if error
+        }
+        // onAuthStateChange listener will handle state updates (setUser, setProfile, setIsAuthenticated, setLoading)
+    },
+    updateProfile: async (profileDataToUpdate) => {
+        if (!user) throw new Error("No user logged in.");
+        const { id, ...updateData } = profileDataToUpdate;
+
+        // setLoading(true); // Optional: set loading true
+        const { data: updatedProfileData, error } = await supabase
+            .from('profiles')
+            .update(updateData)
+            .eq('id', user.id)
+            .select()
+            .single();
+        // setLoading(false); // Reset loading
+
+        if (error) {
+            console.error("Error updating profile in DB:", error);
+            throw error;
+        }
+        
+        setProfile(updatedProfileData);
+        setUser(prevUser => ({ ...prevUser, profile: updatedProfileData }));
+        return updatedProfileData;
+    },
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
-}
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
 
-export default AuthContext;
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};

@@ -1,156 +1,133 @@
-import React, { useState, useEffect } from 'react';
+// AdminDashboard.jsx
+
+import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Container,
-  Typography,
-  Box,
-  Tabs,
-  Tab,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Button,
-  IconButton,
-  TextField,
-  Switch,
-  FormControlLabel,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  MenuItem,
-  Select,
-  InputLabel,
-  FormControl,
-  CircularProgress,
-  Snackbar,
-  Alert,
-  Card,
-  CardContent,
-  Divider,
+  Container, Typography, Box, Tabs, Tab, Paper, Table, TableBody,
+  TableCell, TableContainer, TableHead, TableRow, Button, IconButton,
+  Switch, FormControlLabel, Dialog, DialogActions, DialogContent,
+  DialogContentText, DialogTitle, MenuItem, Select, InputLabel, FormControl,
+  CircularProgress, Snackbar, Alert, Card, CardContent, TextField
 } from '@mui/material';
 import {
   Delete as DeleteIcon,
-  Edit as EditIcon,
   Refresh as RefreshIcon,
-  Block as BlockIcon,
-  Check as CheckIcon,
+  Block as BlockIcon, // For deactivating
+  // Check as CheckIcon, // For activating (if you add that feature)
 } from '@mui/icons-material';
-import { supabase } from '../lib/supabase';
+import { supabase } from '../lib/supabase'; // Your Supabase client
+
+// Placeholder for system configurations - fetch/save from a 'system_settings' table
+const initialConfigurations = {
+  default_currency: 'AUD',
+  enable_cgt: true,
+  free_user_upload_limit: 100,
+  premium_user_upload_limit: 1000,
+  default_theme: 'light',
+  // Add more as needed
+};
+
 
 function AdminDashboard() {
   const [activeTab, setActiveTab] = useState(0);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [configurations, setConfigurations] = useState({
-    defaultCurrency: 'AUD',
-    enableCGT: true,
-    freeUserUploadLimit: 100,
-    premiumUserUploadLimit: 1000,
-    defaultTheme: 'light',
-  });
-  const [notification, setNotification] = useState({
-    open: false,
-    message: '',
-    severity: 'info'
-  });
-  const [deleteUserDialog, setDeleteUserDialog] = useState({
-    open: false,
-    userId: null,
-    email: ''
-  });
+  const [configurations, setConfigurations] = useState(initialConfigurations);
+  const [notification, setNotification] = useState({ open: false, message: '', severity: 'info' });
+  const [deleteUserDialog, setDeleteUserDialog] = useState({ open: false, userId: null, email: '' });
+  const [editUser, setEditUser] = useState(null); // For editing a user's details (optional)
+
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
 
-  // Load users
-  const loadUsers = async () => {
+  const showNotification = useCallback((message, severity = 'info') => {
+    setNotification({ open: true, message, severity });
+  }, []);
+
+  // Load users (profiles)
+  const loadUsers = useCallback(async () => {
     setLoading(true);
     try {
+      // Admins can view all profiles due to RLS policy `public.is_user_admin(auth.uid())`
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, email, first_name, last_name, avatar_url, created_at, is_admin, account_type') // Explicitly select columns
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      
-      // For each profile, get the auth user data to check roles
-      const usersWithRoles = await Promise.all(
-        data.map(async (profile) => {
-          // This is a simulated function - in real implementation
-          // you would need to either use Supabase admin or server functions
-          // to get user roles from the auth.users table
-          const userRole = await getUserRole(profile.id);
-          
-          return {
-            ...profile,
-            role: userRole,
-            accountType: userRole === 'admin' ? 'Admin' : 'Regular'
-          };
-        })
-      );
-      
-      setUsers(usersWithRoles);
+      setUsers(data || []);
     } catch (error) {
       console.error('Error loading users:', error);
       showNotification(`Error loading users: ${error.message}`, 'error');
     } finally {
       setLoading(false);
     }
-  };
+  }, [showNotification]);
 
-  // Simulate getting user role - in production this should be a server function
-  const getUserRole = async (userId) => {
-    // This is just a placeholder. In a real app, you'd need admin access
-    // to the auth.users table or use Supabase Edge Functions
-    return userId === 'some-admin-id' ? 'admin' : 'authenticated';
-  };
-
-  // Load system configurations
-  const loadConfigurations = async () => {
-    // In a real app, you'd fetch these from your database
-    // This is just a placeholder with hardcoded values
-    setConfigurations({
-      defaultCurrency: 'AUD',
-      enableCGT: true,
-      freeUserUploadLimit: 100,
-      premiumUserUploadLimit: 1000,
-      defaultTheme: 'light',
-    });
-  };
-
-  useEffect(() => {
-    loadUsers();
-    loadConfigurations();
-  }, []);
-
-  const handleUpdateUserRole = async (userId, newRole) => {
+  // Load system configurations from a dedicated table (e.g., 'system_settings')
+  const loadConfigurations = useCallback(async () => {
     setLoading(true);
     try {
-      // In a real app, this would be a call to a secure backend function
-      // that has administrative privileges to update user roles
-      // Here we're simulating it
-      
-      // Update the user in the UI immediately for better UX
-      setUsers(users.map(user => 
-        user.id === userId 
-          ? { 
-              ...user, 
-              role: newRole, 
-              accountType: newRole === 'admin' ? 'Admin' : 'Regular'
-            } 
-          : user
-      ));
-      
-      showNotification(`User role updated successfully`, 'success');
+      // Example: Fetch from a table named 'system_settings' where there's one row
+      const { data, error } = await supabase
+        .from('system_settings') // CREATE THIS TABLE
+        .select('*')
+        .limit(1)
+        .single();
+
+      if (error && error.code !== 'PGRST116') { // PGRST116: no rows found (OK if table is empty initially)
+        throw error;
+      }
+      if (data) {
+        setConfigurations(data);
+      } else {
+        // Optional: Create initial settings if table is empty
+        // await supabase.from('system_settings').insert([initialConfigurations]);
+        // setConfigurations(initialConfigurations);
+        showNotification('No system configurations found. Using defaults.', 'warning');
+      }
     } catch (error) {
-      console.error('Error updating user role:', error);
-      showNotification(`Error updating user role: ${error.message}`, 'error');
+      console.error('Error loading configurations:', error);
+      showNotification(`Error loading configurations: ${error.message}`, 'error');
+      setConfigurations(initialConfigurations); // Fallback to defaults
+    } finally {
+      setLoading(false);
+    }
+  }, [showNotification]);
+
+
+  useEffect(() => {
+    if (activeTab === 0) {
+      loadUsers();
+    } else if (activeTab === 1) {
+      loadConfigurations();
+    }
+  }, [activeTab, loadUsers, loadConfigurations]);
+
+
+  // --- USER MANAGEMENT ACTIONS (Require Supabase Edge Functions) ---
+
+  const handleUpdateUserAdminStatus = async (userId, isAdminStatus) => {
+    setLoading(true);
+    try {
+      // This needs to call a Supabase Edge Function
+      const { data, error } = await supabase.functions.invoke('set-admin-status', {
+        body: { userIdToUpdate: userId, isAdmin: isAdminStatus },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error); // Error from function
+
+      // Update UI optimistically or re-fetch
+      setUsers(users.map(user => 
+        user.id === userId ? { ...user, is_admin: isAdminStatus } : user
+      ));
+      showNotification(`User admin status updated successfully`, 'success');
+    } catch (error) {
+      console.error('Error updating user admin status:', error);
+      showNotification(`Error: ${error.message}`, 'error');
+      loadUsers(); // Re-fetch on error to ensure UI consistency
     } finally {
       setLoading(false);
     }
@@ -159,7 +136,8 @@ function AdminDashboard() {
   const handleUpdateAccountType = async (userId, newType) => {
     setLoading(true);
     try {
-      // Update profile with new account type (free vs premium)
+      // This can be a direct update to 'profiles' if RLS allows admins to update any profile
+      // Your "Admins can update all profiles" RLS policy should cover this
       const { error } = await supabase
         .from('profiles')
         .update({ account_type: newType })
@@ -167,69 +145,66 @@ function AdminDashboard() {
       
       if (error) throw error;
       
-      // Update UI
       setUsers(users.map(user => 
-        user.id === userId 
-          ? { ...user, account_type: newType } 
-          : user
+        user.id === userId ? { ...user, account_type: newType } : user
       ));
-      
       showNotification(`Account type updated to ${newType}`, 'success');
     } catch (error) {
       console.error('Error updating account type:', error);
-      showNotification(`Error updating account type: ${error.message}`, 'error');
+      showNotification(`Error: ${error.message}`, 'error');
+      loadUsers();
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeactivateUser = async (userId) => {
+    // Deactivating/Banning a user usually involves calling a Supabase Admin API
+    // via an Edge Function to update auth.users table.
+    // For a simpler "soft" deactivate, you could add an 'is_active' boolean to 'profiles' table.
+    // Let's assume you call an Edge Function.
     setLoading(true);
     try {
-      // In a real app, you would call a secure backend function 
-      // Here we're updating the UI only for demonstration
-      setUsers(users.map(user => 
-        user.id === userId 
-          ? { ...user, is_active: false } 
-          : user
-      ));
-      
-      showNotification(`User deactivated successfully`, 'success');
+      const { data, error } = await supabase.functions.invoke('set-user-active-status', {
+        body: { userIdToUpdate: userId, isActive: false }, // true to reactivate
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      // Assuming the edge function or a trigger updates `profiles.is_active` or similar
+      showNotification(`User status updated successfully`, 'success');
+      loadUsers(); // Re-fetch to get updated status
     } catch (error) {
       console.error('Error deactivating user:', error);
-      showNotification(`Error deactivating user: ${error.message}`, 'error');
+      showNotification(`Error: ${error.message}`, 'error');
     } finally {
       setLoading(false);
     }
   };
-
+  
   const handleOpenDeleteDialog = (userId, email) => {
-    setDeleteUserDialog({
-      open: true,
-      userId,
-      email
-    });
+    setDeleteUserDialog({ open: true, userId, email });
   };
 
   const handleCloseDeleteDialog = () => {
-    setDeleteUserDialog({
-      open: false,
-      userId: null,
-      email: ''
-    });
+    setDeleteUserDialog({ open: false, userId: null, email: '' });
   };
 
   const handleDeleteUser = async () => {
     if (!deleteUserDialog.userId) return;
-    
     setLoading(true);
     try {
-      // In a real app, you would call a secure backend function
-      // that has administrative privileges to delete users
-      // Here we're just updating the UI
-      
+      // This MUST call a Supabase Edge Function with Admin privileges
+      const { data, error } = await supabase.functions.invoke('delete-user-admin', {
+        body: { userIdToDelete: deleteUserDialog.userId },
+      });
+
+      if (error) throw error; // Network or function invocation error
+      if (data?.error) throw new Error(data.error); // Error returned from function logic
+
+      // If successful, remove from UI
       setUsers(users.filter(user => user.id !== deleteUserDialog.userId));
-      showNotification(`User deleted successfully`, 'success');
+      showNotification(`User ${deleteUserDialog.email} deleted successfully`, 'success');
       handleCloseDeleteDialog();
     } catch (error) {
       console.error('Error deleting user:', error);
@@ -239,11 +214,16 @@ function AdminDashboard() {
     }
   };
 
+  // --- SYSTEM CONFIGURATION ACTIONS ---
   const handleSaveConfigurations = async () => {
     setLoading(true);
     try {
-      // In a real app, you would save these to your database
-      // This is just a placeholder
+      // Assuming one row in 'system_settings' table, or use a specific ID
+      const { error } = await supabase
+        .from('system_settings')
+        .upsert(configurations, { onConflict: 'id' }); // Assuming 'id' is PK, adjust if not
+
+      if (error) throw error;
       showNotification('System settings updated successfully', 'success');
     } catch (error) {
       console.error('Error saving configurations:', error);
@@ -252,20 +232,12 @@ function AdminDashboard() {
       setLoading(false);
     }
   };
-
-  const showNotification = (message, severity = 'info') => {
-    setNotification({
-      open: true,
-      message,
-      severity
-    });
-  };
-
-  const handleCloseNotification = () => {
-    setNotification({
-      ...notification,
-      open: false
-    });
+  
+  const handleCloseNotification = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setNotification(prev => ({ ...prev, open: false }));
   };
 
   return (
@@ -276,241 +248,171 @@ function AdminDashboard() {
       
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
         <Tabs value={activeTab} onChange={handleTabChange} aria-label="admin dashboard tabs">
-          <Tab label="User Management" />
-          <Tab label="System Configuration" />
+          <Tab label="User Management" id="admin-tab-0" aria-controls="admin-tabpanel-0" />
+          <Tab label="System Configuration" id="admin-tab-1" aria-controls="admin-tabpanel-1" />
         </Tabs>
       </Box>
       
       {/* User Management Tab */}
-      {activeTab === 0 && (
-        <Box>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-            <Typography variant="h5" component="h2">
-              User Management
-            </Typography>
-            <Button 
-              startIcon={<RefreshIcon />} 
-              variant="outlined" 
-              onClick={loadUsers}
-              disabled={loading}
-            >
-              Refresh
-            </Button>
-          </Box>
-          
-          {loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-              <CircularProgress />
+      <Box role="tabpanel" hidden={activeTab !== 0} id="admin-tabpanel-0" aria-labelledby="admin-tab-0">
+        {activeTab === 0 && (
+          <Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <Typography variant="h5" component="h2">User Management</Typography>
+              <Button startIcon={<RefreshIcon />} variant="outlined" onClick={loadUsers} disabled={loading}>
+                Refresh Users
+              </Button>
             </Box>
-          ) : (
-            <TableContainer component={Paper}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Name</TableCell>
-                    <TableCell>Email</TableCell>
-                    <TableCell>Account Type</TableCell>
-                    <TableCell>Role</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell>Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {users.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell>{user.first_name} {user.last_name}</TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>
-                        <Select
-                          value={user.account_type || 'free'}
-                          size="small"
-                          onChange={(e) => handleUpdateAccountType(user.id, e.target.value)}
-                        >
-                          <MenuItem value="free">Free</MenuItem>
-                          <MenuItem value="premium">Premium</MenuItem>
-                        </Select>
-                      </TableCell>
-                      <TableCell>
-                        <Select
-                          value={user.role || 'authenticated'}
-                          size="small"
-                          onChange={(e) => handleUpdateUserRole(user.id, e.target.value)}
-                        >
-                          <MenuItem value="authenticated">Regular</MenuItem>
-                          <MenuItem value="admin">Admin</MenuItem>
-                        </Select>
-                      </TableCell>
-                      <TableCell>
-                        {user.is_active === false ? (
-                          <Typography color="error">Inactive</Typography>
-                        ) : (
-                          <Typography color="success">Active</Typography>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <IconButton 
-                          color="warning" 
-                          onClick={() => handleDeactivateUser(user.id)}
-                          disabled={user.is_active === false}
-                          title="Deactivate User"
-                        >
-                          <BlockIcon />
-                        </IconButton>
-                        <IconButton 
-                          color="error" 
-                          onClick={() => handleOpenDeleteDialog(user.id, user.email)}
-                          title="Delete User"
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {users.length === 0 && (
+            
+            {loading && users.length === 0 ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>
+            ) : (
+              <TableContainer component={Paper}>
+                <Table stickyHeader>
+                  <TableHead>
                     <TableRow>
-                      <TableCell colSpan={6} align="center">
-                        No users found
-                      </TableCell>
+                      <TableCell>Name</TableCell>
+                      <TableCell>Email</TableCell>
+                      <TableCell>Account Type</TableCell>
+                      <TableCell>Admin Status</TableCell>
+                      {/* <TableCell>Status</TableCell> Add if you implement soft deactivation */}
+                      <TableCell>Actions</TableCell>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
-        </Box>
-      )}
+                  </TableHead>
+                  <TableBody>
+                    {users.map((user) => (
+                      <TableRow key={user.id} hover>
+                        <TableCell>{user.first_name || ''} {user.last_name || ''}</TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>
+                          <Select
+                            value={user.account_type || 'free'}
+                            size="small"
+                            onChange={(e) => handleUpdateAccountType(user.id, e.target.value)}
+                            disabled={loading}
+                            sx={{ minWidth: 100 }}
+                          >
+                            <MenuItem value="free">Free</MenuItem>
+                            <MenuItem value="premium">Premium</MenuItem>
+                            {/* Add more tiers if needed */}
+                          </Select>
+                        </TableCell>
+                        <TableCell>
+                          <FormControlLabel
+                            control={
+                              <Switch 
+                                checked={user.is_admin === true}
+                                onChange={(e) => handleUpdateUserAdminStatus(user.id, e.target.checked)}
+                                disabled={loading}
+                              />
+                            }
+                            label={user.is_admin ? "Admin" : "User"}
+                          />
+                        </TableCell>
+                        {/* <TableCell>{user.is_active === false ? "Inactive" : "Active"}</TableCell> */}
+                        <TableCell>
+                          {/* <IconButton title="Deactivate User" onClick={() => handleDeactivateUser(user.id)} disabled={loading}><BlockIcon /></IconButton> */}
+                          <IconButton title="Delete User" color="error" onClick={() => handleOpenDeleteDialog(user.id, user.email)} disabled={loading}><DeleteIcon /></IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {users.length === 0 && !loading && (
+                      <TableRow><TableCell colSpan={5} align="center">No users found</TableCell></TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
+          </Box>
+        )}
+      </Box>
       
       {/* System Configuration Tab */}
-      {activeTab === 1 && (
-        <Box>
-          <Typography variant="h5" component="h2" gutterBottom>
-            System Configuration
-          </Typography>
-          
-          <Card sx={{ mb: 3 }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Currency & Financial Settings
-              </Typography>
-              
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <FormControl fullWidth>
-                  <InputLabel id="default-currency-label">Default Currency</InputLabel>
-                  <Select
-                    labelId="default-currency-label"
-                    value={configurations.defaultCurrency}
-                    label="Default Currency"
-                    onChange={(e) => setConfigurations({...configurations, defaultCurrency: e.target.value})}
-                  >
-                    <MenuItem value="USD">US Dollar (USD)</MenuItem>
-                    <MenuItem value="AUD">Australian Dollar (AUD)</MenuItem>
-                    <MenuItem value="EUR">Euro (EUR)</MenuItem>
-                    <MenuItem value="GBP">British Pound (GBP)</MenuItem>
-                  </Select>
-                </FormControl>
-                
-                <FormControlLabel
-                  control={
-                    <Switch 
-                      checked={configurations.enableCGT}
-                      onChange={(e) => setConfigurations({...configurations, enableCGT: e.target.checked})}
-                    />
-                  }
-                  label="Enable Capital Gains Tax (CGT) Calculation"
-                />
-              </Box>
-            </CardContent>
-          </Card>
-          
-          <Card sx={{ mb: 3 }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                User Limits
-              </Typography>
-              
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <TextField
-                  label="Free User Upload Limit"
-                  type="number"
-                  value={configurations.freeUserUploadLimit}
-                  onChange={(e) => setConfigurations({...configurations, freeUserUploadLimit: parseInt(e.target.value)})}
-                  fullWidth
-                  helperText="Maximum number of transactions a free user can upload"
-                />
-                
-                <TextField
-                  label="Premium User Upload Limit"
-                  type="number"
-                  value={configurations.premiumUserUploadLimit}
-                  onChange={(e) => setConfigurations({...configurations, premiumUserUploadLimit: parseInt(e.target.value)})}
-                  fullWidth
-                  helperText="Maximum number of transactions a premium user can upload"
-                />
-              </Box>
-            </CardContent>
-          </Card>
-          
-          <Card sx={{ mb: 3 }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Display Settings
-              </Typography>
-              
-              <FormControl fullWidth>
-                <InputLabel id="default-theme-label">Default Theme</InputLabel>
-                <Select
-                  labelId="default-theme-label"
-                  value={configurations.defaultTheme}
-                  label="Default Theme"
-                  onChange={(e) => setConfigurations({...configurations, defaultTheme: e.target.value})}
-                >
-                  <MenuItem value="light">Light</MenuItem>
-                  <MenuItem value="dark">Dark</MenuItem>
-                </Select>
-              </FormControl>
-            </CardContent>
-          </Card>
-          
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <Button 
-              variant="contained" 
-              color="primary" 
-              onClick={handleSaveConfigurations}
-              disabled={loading}
-            >
-              Save Configuration
-            </Button>
+      <Box role="tabpanel" hidden={activeTab !== 1} id="admin-tabpanel-1" aria-labelledby="admin-tab-1">
+        {activeTab === 1 && (
+          <Box>
+            <Typography variant="h5" component="h2" gutterBottom>System Configuration</Typography>
+            {loading && Object.keys(configurations).length === 0 ? (
+                 <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>
+            ) : (
+            <>
+            <Card sx={{ mb: 3 }}>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>Currency & Financial Settings</Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+                  <FormControl fullWidth>
+                    <InputLabel id="default-currency-label">Default Currency</InputLabel>
+                    <Select
+                      labelId="default-currency-label" value={configurations.defaultCurrency || 'AUD'} label="Default Currency"
+                      onChange={(e) => setConfigurations({...configurations, defaultCurrency: e.target.value})}
+                    >
+                      <MenuItem value="USD">US Dollar (USD)</MenuItem>
+                      <MenuItem value="AUD">Australian Dollar (AUD)</MenuItem>
+                      <MenuItem value="EUR">Euro (EUR)</MenuItem>
+                      <MenuItem value="GBP">British Pound (GBP)</MenuItem>
+                    </Select>
+                  </FormControl>
+                  <FormControlLabel control={<Switch checked={configurations.enableCGT || false} onChange={(e) => setConfigurations({...configurations, enableCGT: e.target.checked})} />}
+                    label="Enable Capital Gains Tax (CGT) Calculation" />
+                </Box>
+              </CardContent>
+            </Card>
+            
+            <Card sx={{ mb: 3 }}>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>User Limits</Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+                  <TextField label="Free User Upload Limit" type="number" value={configurations.freeUserUploadLimit || 0}
+                    onChange={(e) => setConfigurations({...configurations, freeUserUploadLimit: parseInt(e.target.value) || 0})} fullWidth helperText="Max transactions for free users" />
+                  <TextField label="Premium User Upload Limit" type="number" value={configurations.premiumUserUploadLimit || 0}
+                    onChange={(e) => setConfigurations({...configurations, premiumUserUploadLimit: parseInt(e.target.value) || 0})} fullWidth helperText="Max transactions for premium users" />
+                </Box>
+              </CardContent>
+            </Card>
+
+            <Card sx={{ mb: 3 }}>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>Display Settings</Typography>
+                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+                  <FormControl fullWidth>
+                    <InputLabel id="default-theme-label">Default Theme for New Users</InputLabel>
+                    <Select labelId="default-theme-label" value={configurations.defaultTheme || 'light'} label="Default Theme for New Users"
+                      onChange={(e) => setConfigurations({...configurations, defaultTheme: e.target.value})} >
+                      <MenuItem value="light">Light</MenuItem>
+                      <MenuItem value="dark">Dark</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Box>
+              </CardContent>
+            </Card>
+            
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <Button variant="contained" color="primary" onClick={handleSaveConfigurations} disabled={loading}>Save Configuration</Button>
+            </Box>
+            </>
+            )}
           </Box>
-        </Box>
-      )}
+        )}
+      </Box>
       
-      {/* Delete User Confirmation Dialog */}
-      <Dialog
-        open={deleteUserDialog.open}
-        onClose={handleCloseDeleteDialog}
-      >
-        <DialogTitle>Delete User</DialogTitle>
+      <Dialog open={deleteUserDialog.open} onClose={handleCloseDeleteDialog}>
+        <DialogTitle>Delete User Account</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to delete the user <strong>{deleteUserDialog.email}</strong>? This action cannot be undone.
+            Are you sure you want to permanently delete the user <strong>{deleteUserDialog.email}</strong>? 
+            This will delete their authentication record and all associated data based on your database's cascade rules. This action cannot be undone.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDeleteDialog}>Cancel</Button>
-          <Button onClick={handleDeleteUser} color="error" variant="contained">
-            Delete
+          <Button onClick={handleDeleteUser} color="error" variant="contained" disabled={loading}>
+            {loading ? <CircularProgress size={24} /> : "Delete User"}
           </Button>
         </DialogActions>
       </Dialog>
       
-      {/* Notification Snackbar */}
-      <Snackbar 
-        open={notification.open} 
-        autoHideDuration={6000} 
-        onClose={handleCloseNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={handleCloseNotification} severity={notification.severity} sx={{ width: '100%' }}>
+      <Snackbar open={notification.open} autoHideDuration={6000} onClose={handleCloseNotification} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+        <Alert onClose={handleCloseNotification} severity={notification.severity} sx={{ width: '100%' }} variant="filled">
           {notification.message}
         </Alert>
       </Snackbar>
@@ -518,4 +420,4 @@ function AdminDashboard() {
   );
 }
 
-export default AdminDashboard; 
+export default AdminDashboard;

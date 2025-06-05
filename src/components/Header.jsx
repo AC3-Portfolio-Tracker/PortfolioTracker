@@ -1,10 +1,12 @@
+// Header.jsx
+
 import React, { useState } from "react";
 import "./Header.css";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import ThemeToggle from "./ThemeToggle";
 import {
-  Button, // Button is imported but not directly used, consider removing if not needed elsewhere
+  // Button, // Removed unused import
   Menu,
   MenuItem,
   Avatar,
@@ -21,18 +23,18 @@ import {
 } from "@mui/icons-material";
 
 function Header() {
-  const { isAuthenticated, signOut, user } = useAuth();
+  const { isAuthenticated, signOut, user } = useAuth(); // user should have user.profile.is_admin
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
 
-  // Check if user is admin - we'll treat role === 'admin' as admin user
-  const isAdmin = user?.role === "admin";
+  // Use is_admin from the profile data attached to the user object
+  const isAdmin = user?.profile?.is_admin === true;
 
   const handleSignOut = async () => {
+    handleClose(); // Close menu before navigating
     await signOut();
-    navigate("/login");
-    handleClose();
+    navigate("/login"); // Navigate after sign out
   };
 
   const handleProfileOpen = (event) => {
@@ -44,7 +46,6 @@ function Header() {
   };
 
   const navigateToProfile = () => {
-    // Pass state to Settings page to activate the "Your Profile" tab
     navigate("/settings", { state: { activeTab: "Your Profile" } });
     handleClose();
   };
@@ -54,8 +55,22 @@ function Header() {
     handleClose();
   };
 
-  // Function to determine active link class
-  const getLinkClass = ({ isActive }) => (isActive ? "active" : "");
+  const getLinkClass = ({ isActive }) => (isActive ? "active nav-link-active" : "nav-link"); // Added base class
+
+  const getAvatarInitials = () => {
+    if (user?.user_metadata?.display_name) {
+      const names = user.user_metadata.display_name.split(' ');
+      if (names.length > 1 && names[0] && names[names.length - 1]) {
+        return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+      }
+      return names[0]?.[0]?.toUpperCase() || 'U';
+    }
+    if (user?.email) {
+      return user.email[0].toUpperCase();
+    }
+    return "U";
+  };
+
 
   return (
     <header className="header">
@@ -67,62 +82,24 @@ function Header() {
       <nav className="nav">
         {isAuthenticated ? (
           <ul>
-            <li>
-              <NavLink to="/home" className={getLinkClass}>
-                Overview
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/brokers" className={getLinkClass}>
-                Brokers
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/holdings" className={getLinkClass}>
-                Holdings
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/performance" className={getLinkClass}>
-                Performance
-              </NavLink>
-            </li>
-                        <li>
-              <NavLink to="/reports" className={getLinkClass}>
-                Reports
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/pricing" className={getLinkClass}>
-                Pricing
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/features" className={getLinkClass}>
-                Features
-              </NavLink>
-            </li>
-            {/* Settings moved to dropdown menu */}
+            <li><NavLink to="/home" className={getLinkClass}>Overview</NavLink></li>
+            <li><NavLink to="/brokers" className={getLinkClass}>Brokers</NavLink></li>
+            <li><NavLink to="/holdings" className={getLinkClass}>Holdings</NavLink></li>
+            <li><NavLink to="/performance" className={getLinkClass}>Performance</NavLink></li>
+            <li><NavLink to="/reports" className={getLinkClass}>Reports</NavLink></li>
+            <li><NavLink to="/pricing" className={getLinkClass}>Pricing</NavLink></li>
+            <li><NavLink to="/features" className={getLinkClass}>Features</NavLink></li>
           </ul>
         ) : (
           <ul>
-            <li>
-              <NavLink to="/login" className={getLinkClass}>
-                Login
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/signup" className={getLinkClass}>
-                Sign Up
-              </NavLink>
-            </li>
+            <li><NavLink to="/login" className={getLinkClass}>Login</NavLink></li>
+            <li><NavLink to="/signup" className={getLinkClass}>Sign Up</NavLink></li>
           </ul>
         )}
       </nav>
       <div className="user-controls">
         <ThemeToggle />
-        {/* Conditionally render user profile controls if authenticated */}
-        {isAuthenticated && (
+        {isAuthenticated && user && ( // Added user check for safety
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <IconButton
               onClick={handleProfileOpen}
@@ -130,9 +107,10 @@ function Header() {
               aria-controls={open ? "profile-menu" : undefined}
               aria-haspopup="true"
               aria-expanded={open ? "true" : undefined}
+              title="Account settings"
             >
               <Avatar sx={{ width: 32, height: 32, bgcolor: "primary.main" }}>
-                {user?.email?.charAt(0).toUpperCase() || "U"}
+                {getAvatarInitials()}
               </Avatar>
             </IconButton>
             <Menu
@@ -142,42 +120,51 @@ function Header() {
               onClose={handleClose}
               transformOrigin={{ horizontal: "right", vertical: "top" }}
               anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+              PaperProps={{
+                elevation: 0,
+                sx: {
+                  overflow: 'visible',
+                  filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
+                  mt: 1.5,
+                  '& .MuiAvatar-root': { width: 32, height: 32, ml: -0.5, mr: 1 },
+                  '&::before': {
+                    content: '""', display: 'block', position: 'absolute',
+                    top: 0, right: 14, width: 10, height: 10,
+                    bgcolor: 'background.paper', transform: 'translateY(-50%) rotate(45deg)',
+                    zIndex: 0,
+                  },
+                },
+              }}
             >
-              <MenuItem onClick={handleClose} disabled>
-                <Typography variant="body2" color="text.secondary">
-                {user?.user_metadata?.display_name || user?.email || "User"}
+              <MenuItem onClick={handleClose} disabled sx={{ '&.Mui-disabled': { opacity: 1 }}}>
+                <Typography variant="body1" color="text.primary" sx={{ fontWeight: 'medium' }}>
+                  {user?.user_metadata?.display_name || user?.email || "User"}
                 </Typography>
               </MenuItem>
+              { (user?.user_metadata?.display_name && user?.email) &&
+                <MenuItem onClick={handleClose} disabled sx={{ pt: 0, pb: 0.5, '&.Mui-disabled': { opacity: 1 }}}>
+                  <Typography variant="caption" color="text.secondary">
+                    {user.email}
+                  </Typography>
+                </MenuItem>
+              }
               <Divider />
-              {isAdmin && (
+              {isAdmin && ( // This now uses user.profile.is_admin
                 <MenuItem onClick={navigateToDashboard}>
-                  <ListItemIcon>
-                    <DashboardIcon fontSize="small" />
-                  </ListItemIcon>
+                  <ListItemIcon><DashboardIcon fontSize="small" /></ListItemIcon>
                   Admin Dashboard
                 </MenuItem>
               )}
               <MenuItem onClick={navigateToProfile}>
-                <ListItemIcon>
-                  <PersonIcon fontSize="small" />
-                </ListItemIcon>
+                <ListItemIcon><PersonIcon fontSize="small" /></ListItemIcon>
                 Your Profile
               </MenuItem>
-              <MenuItem
-                onClick={() => {
-                  navigate("/settings");
-                  handleClose();
-                }}
-              >
-                <ListItemIcon>
-                  <SettingsIcon fontSize="small" />
-                </ListItemIcon>
+              <MenuItem onClick={() => { navigate("/settings"); handleClose(); }}>
+                <ListItemIcon><SettingsIcon fontSize="small" /></ListItemIcon>
                 Settings
               </MenuItem>
               <MenuItem onClick={handleSignOut}>
-                <ListItemIcon>
-                  <LogoutIcon fontSize="small" />
-                </ListItemIcon>
+                <ListItemIcon><LogoutIcon fontSize="small" /></ListItemIcon>
                 Sign Out
               </MenuItem>
             </Menu>

@@ -6,7 +6,7 @@ import GoalsSettings from "./GoalsSettings";
 import DataExportSettings from "./DataExportSettings";
 import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../contexts/ThemeContext";
-import { settings } from "../lib/supabase";
+import { supabase, settings } from "../lib/supabase"; // Ensure supabase client is exported here
 import { TextField, MenuItem, Button, Alert, CircularProgress, Switch, FormControlLabel } from "@mui/material";
 import { useLocation } from "react-router-dom";
 import Brightness4Icon from '@mui/icons-material/Brightness4';
@@ -22,7 +22,6 @@ function SettingsPage() {
     theme: "dark",
     notification_preferences: {},
   });
-  // Add local state for profile data
   const [localProfile, setLocalProfile] = useState(null);
   const [currencies, setCurrencies] = useState([
     { code: "USD", name: "United States Dollar" },
@@ -39,11 +38,9 @@ function SettingsPage() {
   const [newExchangeRate, setNewExchangeRate] = useState({ currency: "", rate: "" });
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-  // Get user, profile, and updateProfile from AuthContext
   const { user, profile, updateProfile } = useAuth();
   const { mode, setThemeMode } = useTheme();
 
-  // Initialize local profile state when profile from context changes
   useEffect(() => {
     if (profile) {
       setLocalProfile(profile);
@@ -51,7 +48,6 @@ function SettingsPage() {
   }, [profile]);
 
   useEffect(() => {
-    // Check if we have a specific tab to activate from navigation state
     if (location.state?.activeTab) {
       setActiveTab(location.state.activeTab);
     }
@@ -63,12 +59,11 @@ function SettingsPage() {
       
       setLoading(true);
       try {
-        const { data, error } = await settings.getSettings(user.id);
-        if (error) throw error;
+        const { data, error: fetchError } = await settings.getSettings(user.id);
+        if (fetchError) throw fetchError;
         
         if (data) {
           setUserSettings(data);
-          // If exchange rates exist in notification_preferences, load them
           if (data.notification_preferences?.exchange_rates) {
             setExchangeRates(data.notification_preferences.exchange_rates || []);
           }
@@ -84,7 +79,6 @@ function SettingsPage() {
     fetchSettings();
   }, [user]);
 
-  // Set the theme from localStorage when component mounts
   useEffect(() => {
     setUserSettings(prev => ({
       ...prev,
@@ -94,7 +88,6 @@ function SettingsPage() {
 
   const handleTabClick = (tab) => {
     setActiveTab(tab);
-    // Clear any success/error messages when changing tabs
     setSuccess(null);
     setError(null);
   };
@@ -111,18 +104,14 @@ function SettingsPage() {
       setError("Please select a currency and enter a rate");
       return;
     }
-
     if (isNaN(parseFloat(newExchangeRate.rate)) || parseFloat(newExchangeRate.rate) <= 0) {
       setError("Please enter a valid positive number for the rate");
       return;
     }
-
-    // Check if currency already exists
     if (exchangeRates.some(rate => rate.currency === newExchangeRate.currency)) {
       setError("This currency already has an exchange rate");
       return;
     }
-
     setExchangeRates([...exchangeRates, newExchangeRate]);
     setNewExchangeRate({ currency: "", rate: "" });
     setError(null);
@@ -140,7 +129,6 @@ function SettingsPage() {
     setSuccess(null);
     
     try {
-      // Update notification_preferences to include exchange rates
       const updatedSettings = {
         ...userSettings,
         notification_preferences: {
@@ -149,8 +137,8 @@ function SettingsPage() {
         }
       };
       
-      const { error } = await settings.updateSettings(user.id, updatedSettings);
-      if (error) throw error;
+      const { error: saveError } = await settings.updateSettings(user.id, updatedSettings);
+      if (saveError) throw saveError;
       
       setUserSettings(updatedSettings);
       setSuccess("Settings saved successfully");
@@ -167,7 +155,6 @@ function SettingsPage() {
       ...userSettings,
       theme
     });
-    // Update the global theme
     setThemeMode(theme);
   };
 
@@ -176,13 +163,62 @@ function SettingsPage() {
     handleThemeChange(newTheme);
   };
 
-  // Function to share with child components
   const updateUserSettings = (newSettings) => {
     setUserSettings({
       ...userSettings,
       ...newSettings
     });
   };
+
+  const handleProfileUpdate = async () => {
+    if (!user || !localProfile) return;
+
+    setSaving(true);
+    setError(null);
+    setSuccess(null);
+    let displayNameError = null;
+
+    try {
+      await updateProfile({
+        first_name: localProfile.first_name,
+        last_name: localProfile.last_name,
+      });
+
+      const firstName = localProfile.first_name || "";
+      const lastName = localProfile.last_name || "";
+      const newDisplayName = `${firstName} ${lastName}`.trim();
+
+      if (newDisplayName) {
+        const { error: updateUserAuthError } = await supabase.auth.updateUser({
+          data: { display_name: newDisplayName },
+        });
+
+        if (updateUserAuthError) {
+          displayNameError = updateUserAuthError; // Store it to check later
+          throw updateUserAuthError;
+        }
+        // user object in AuthContext should update via onAuthStateChange
+      }
+      
+      setSuccess("Profile updated successfully!");
+
+    } catch (err) {
+      console.error("Error updating profile:", err);
+      if (err === displayNameError) { // Check if the caught error is specifically the displayName update error
+        setError("Profile details updated, but failed to update display name. Please try again.");
+      } else {
+        setError("Failed to update profile details. Please try again.");
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Construct Supabase project URL safely
+  const supabaseProjectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+  const supabaseUserManagementUrl = supabaseProjectId
+    ? `https://app.supabase.com/project/${supabaseProjectId}/auth/users`
+    : "#"; // Fallback URL or disable link if ID is not set
 
   return (
     <div className="settings-page">
@@ -289,7 +325,7 @@ function SettingsPage() {
                     onClick={saveGeneralSettings}
                     disabled={saving}
                   >
-                    {saving ? "Saving..." : "Save"}
+                    {saving ? <CircularProgress size={24} /> : "Save"}
                   </Button>
                 </div>
 
@@ -360,7 +396,7 @@ function SettingsPage() {
                     disabled={saving}
                     sx={{ mt: 2 }}
                   >
-                    {saving ? "Saving..." : "Save Exchange Rates"}
+                    {saving ? <CircularProgress size={24} /> : "Save Exchange Rates"}
                   </Button>
                 </div>
               </div>
@@ -450,7 +486,7 @@ function SettingsPage() {
                   disabled={saving}
                   sx={{ mt: 2 }}
                 >
-                  {saving ? "Saving..." : "Save Theme Preferences"}
+                  {saving ? <CircularProgress size={24} /> : "Save Theme Preferences"}
                 </Button>
               </div>
             )}
@@ -468,11 +504,10 @@ function SettingsPage() {
                 <h3>Your Profile</h3>
                 <p>Manage your account information and preferences.</p>
                 
-                {/* Display user information */}
                 <div className="user-info">
                   <p><strong>Email:</strong> {user?.email}</p>
+                  <p><strong>Display Name:</strong> {user?.user_metadata?.display_name || "Not set"}</p>
                   
-                  {/* Add form for editing first name and last name */}
                   <div className="profile-edit-form">
                     <h4>Edit Profile</h4>
                     <TextField
@@ -482,6 +517,7 @@ function SettingsPage() {
                       fullWidth
                       variant="outlined"
                       margin="normal"
+                      disabled={saving}
                     />
                     <TextField
                       label="Last Name"
@@ -490,30 +526,13 @@ function SettingsPage() {
                       fullWidth
                       variant="outlined"
                       margin="normal"
+                      disabled={saving}
                     />
                     <Button 
                       variant="contained" 
                       color="primary" 
-                      onClick={async () => {
-                        try {
-                          setSaving(true);
-                          setError(null);
-                          setSuccess(null);
-                          
-                          await updateProfile({
-                            first_name: localProfile.first_name,
-                            last_name: localProfile.last_name
-                          });
-                          
-                          setSuccess("Profile updated successfully");
-                        } catch (err) {
-                          console.error("Error updating profile:", err);
-                          setError("Failed to update profile. Please try again.");
-                        } finally {
-                          setSaving(false);
-                        }
-                      }}
-                      disabled={saving}
+                      onClick={handleProfileUpdate}
+                      disabled={saving || !localProfile}
                     >
                       {saving ? <CircularProgress size={24} /> : "Update Profile"}
                     </Button>
@@ -525,12 +544,18 @@ function SettingsPage() {
                     <Button 
                       variant="outlined" 
                       color="primary"
-                      href="https://app.supabase.com/project/your-project-id/auth/users"
+                      href={supabaseUserManagementUrl} // Use the constructed URL
                       target="_blank"
                       rel="noopener noreferrer"
+                      disabled={!supabaseProjectId} // Optionally disable if ID is not available
                     >
                       Manage Account on Supabase
                     </Button>
+                    {!supabaseProjectId && (
+                        <p style={{color: 'red', fontSize: '0.8em', marginTop: '4px'}}>
+                            Supabase project ID not configured. Link disabled.
+                        </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -542,4 +567,4 @@ function SettingsPage() {
   );
 }
 
-export default SettingsPage; // Or export default Settings; if your filename is Settings.jsx
+export default SettingsPage;

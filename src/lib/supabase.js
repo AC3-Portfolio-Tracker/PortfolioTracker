@@ -29,6 +29,17 @@ export const auth = {
     return { data, error };
   },
 
+  // Sign in with Google OAuth
+  signInWithGoogle: async () => {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin
+      }
+    });
+    return { data, error };
+  },
+
   // Sign out the current user
   signOut: async () => {
     const { error } = await supabase.auth.signOut();
@@ -306,4 +317,4 @@ export const performance = {
   }
 };
 
-export default supabase; 
+export default supabase;

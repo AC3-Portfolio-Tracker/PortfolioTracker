@@ -220,9 +220,11 @@ export function AuthProvider({ children }) {
   };
 
   // Update profile function
-  const updateProfile = async (userId, updates) => {
+  const updateProfile = async (userId, rawUpdates) => {
     setLoading(true);
     setError(null);
+    const updates = rawUpdates || {}; // Ensure updates is an object
+
     try {
       // Update Supabase Auth user (auth.users table)
       // Ensure 'data' field in updates is correctly structured for supabase.auth.updateUser

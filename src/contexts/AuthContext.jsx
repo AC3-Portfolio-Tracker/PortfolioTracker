@@ -1,7 +1,7 @@
 // AuthContext.jsx (Corrected with useRef)
 
 import React, { createContext, useState, useEffect, useContext, useRef } from 'react'; // Added useRef
-import { supabase } from '../lib/supabase'; // Adjust path as needed
+import { supabase, auth } from '../lib/supabase'; // Added auth import
 
 const AuthContext = createContext(null);
 
@@ -116,6 +116,21 @@ export const AuthProvider = ({ children }) => {
     profile,
     isAuthenticated,
     loading,
+    signUp: async (email, password, userData) => {
+      const { data, error } = await auth.signUp(email, password, userData);
+      if (error) throw error;
+      return data;
+    },
+    signIn: async (email, password) => {
+      const { data, error } = await auth.signIn(email, password);
+      if (error) throw error;
+      return data;
+    },
+    signInWithGoogle: async () => {
+      const { data, error } = await auth.signInWithGoogle();
+      if (error) throw error;
+      return data;
+    },
     signOut: async () => {
         // setLoading(true); // Optional: set loading true during sign out
         const { error } = await supabase.auth.signOut();

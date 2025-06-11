@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 const FutureIncome = () => {
-  const [forecast, setForecast] = useState([]);
+  const [forecast, _setForecast] = useState([]);
 
   useEffect(() => {
     // fetch("/api/future-income").then(res => res.json()).then(setForecast);

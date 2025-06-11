@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 
 const Exposure = () => {
-  const [exposureData, setExposureData] = useState([]);
+  const [exposureData, _setExposureData] = useState([]); // Renamed to _setExposureData
 
   useEffect(() => {
-    // fetch("/api/exposure").then(res => res.json()).then(setExposureData);
+    // fetch("/api/exposure").then(res => res.json()).then(_setExposureData);
   }, []);
 
   return (

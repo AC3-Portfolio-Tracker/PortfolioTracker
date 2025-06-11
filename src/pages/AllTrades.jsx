@@ -16,7 +16,7 @@ import {
   MenuItem,
   Button,
   IconButton,
-  useTheme,
+  // useTheme, // Removed useTheme from imports
 } from "@mui/material";
 import { ArrowBack } from "@mui/icons-material";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
@@ -29,7 +29,7 @@ const AllTrades = () => {
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState("All");
   const navigate = useNavigate();
-  const theme = useTheme();
+  // const theme = useTheme(); // Removed this line
 
   useEffect(() => {
     const fetchTrades = async () => {
@@ -39,6 +39,8 @@ const AllTrades = () => {
 
       if (!user) {
         alert("You must be logged in.");
+        // Consider navigating to login or showing a more user-friendly message
+        setLoading(false); // Ensure loading is set to false
         return;
       }
 
@@ -65,12 +67,12 @@ const AllTrades = () => {
         const value = t.total_amount || qty * t.price;
         return {
           symbol: t.securities?.symbol || "N/A",
-          date: new Date(t.date).toLocaleDateString(),
+          date: new Date(t.date).toLocaleDateString(), // Consider consistent date formatting
           type: t.type,
           qty,
           price: t.price,
           brokerage: t.fees || 0,
-          exchRate: "1.00 AUD/AUD",
+          exchRate: "1.00 AUD/AUD", // This seems hardcoded, ensure it's correct
           value,
         };
       });
@@ -86,6 +88,11 @@ const AllTrades = () => {
     filterType === "All" ? trades : trades.filter((t) => t.type === filterType);
 
   const handleExport = () => {
+    if (filteredTrades.length === 0) {
+      // Optionally, provide feedback if there's no data to export
+      // e.g., alert("No data to export.");
+      return;
+    }
     const exportData = filteredTrades.map(({ symbol, date, type, qty, price, brokerage, exchRate, value }) => ({
       Symbol: symbol,
       Date: date,
@@ -93,7 +100,7 @@ const AllTrades = () => {
       Quantity: qty,
       Price: price,
       Brokerage: brokerage,
-      ExchangeRate: exchRate,
+      "Exchange Rate": exchRate, // More common to have spaces in Excel headers
       Value: value,
     }));
 
@@ -105,7 +112,6 @@ const AllTrades = () => {
 
   return (
     <Box sx={{ p: 4 }}>
-      {/* ✅ Back to Reports + Bold Heading + Export Icon */}
       <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
         <Button
           variant="outlined"
@@ -120,7 +126,10 @@ const AllTrades = () => {
         </Typography>
         <IconButton
           onClick={handleExport}
+          // Consider using theme colors for better consistency if desired
+          // sx={{ backgroundColor: theme.palette.info.light, color: theme.palette.info.contrastText, p: 1.5, mr: 1 }}
           sx={{ backgroundColor: "#90caf9", color: "white", p: 1.5, mr: 1 }}
+          disabled={filteredTrades.length === 0} // Disable if no trades to export
         >
           <FileDownloadIcon />
         </IconButton>
@@ -133,7 +142,7 @@ const AllTrades = () => {
       ) : (
         <>
           <FormControl
-            sx={(theme) => ({
+            sx={(theme) => ({ // This 'theme' is a parameter and is fine
               minWidth: 220,
               mb: 3,
               "& .MuiInputBase-root": {
@@ -148,13 +157,29 @@ const AllTrades = () => {
               },
               "& .MuiInputLabel-root": {
                 color: theme.palette.text.secondary,
-                backgroundColor: theme.palette.background.paper,
-                px: 0.5,
+                // backgroundColor should cover the text only, not the whole label space
+                // A common pattern is to set it on the label itself if needed for overlapping text.
+                // For a floating label, this might not be needed or handled differently.
+                // Test this to see if it's visually what you want.
+                // backgroundColor: theme.palette.background.paper,
+                // px: 0.5,
               },
             })}
             size="small"
           >
-            <InputLabel id="type-filter-label">Filter by Type</InputLabel>
+            <InputLabel
+              id="type-filter-label"
+              // If you want the label background to only be behind the text when shrunk
+              sx={(theme) => ({
+                '&.MuiInputLabel-shrink': {
+                  backgroundColor: theme.palette.background.paper,
+                  paddingRight: '4px', // Add some padding so text doesn't touch border
+                  paddingLeft: '4px',
+                }
+              })}
+            >
+              Filter by Type
+            </InputLabel>
             <Select
               labelId="type-filter-label"
               value={filterType}
@@ -172,7 +197,7 @@ const AllTrades = () => {
               <Table stickyHeader>
                 <TableHead>
                   <TableRow>
-                    <TableCell>ASX</TableCell>
+                    <TableCell>ASX</TableCell> {/* Or "Symbol" / "Security" */}
                     <TableCell align="center">Date</TableCell>
                     <TableCell align="center">Type</TableCell>
                     <TableCell align="right">Qty</TableCell>
@@ -191,7 +216,7 @@ const AllTrades = () => {
                     </TableRow>
                   ) : (
                     filteredTrades.map((t, i) => (
-                      <TableRow key={i} hover>
+                      <TableRow key={t.id || i} hover> {/* Use a stable key like t.id if available */}
                         <TableCell>{t.symbol}</TableCell>
                         <TableCell align="center">{t.date}</TableCell>
                         <TableCell
@@ -202,15 +227,15 @@ const AllTrades = () => {
                                 ? "error.main"
                                 : t.type === "Buy"
                                 ? "success.main"
-                                : "warning.main",
+                                : "text.secondary", // Fallback for other types if any
                             fontWeight: 600,
                           }}
                         >
                           {t.type}
                         </TableCell>
                         <TableCell align="right">{t.qty}</TableCell>
-                        <TableCell align="right">${t.price.toFixed(2)}</TableCell>
-                        <TableCell align="right">${t.brokerage.toFixed(2)}</TableCell>
+                        <TableCell align="right">${t.price?.toFixed(2) || '0.00'}</TableCell>
+                        <TableCell align="right">${t.brokerage?.toFixed(2) || '0.00'}</TableCell>
                         <TableCell align="center">{t.exchRate}</TableCell>
                         <TableCell
                           align="right"
@@ -218,7 +243,7 @@ const AllTrades = () => {
                             color: t.value < 0 ? "error.main" : "text.primary",
                           }}
                         >
-                          ${t.value.toFixed(2)}
+                          ${t.value?.toFixed(2) || '0.00'}
                         </TableCell>
                       </TableRow>
                     ))

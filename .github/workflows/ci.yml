@@ -1,0 +1,48 @@
+name: CI/CD Pipeline
+
+# When should this workflow run?
+on:
+  # Run on every push to main branch
+  push:
+    branches: [ main ]
+  # Run on every pull request to main branch
+  pull_request:
+    branches: [ main ]
+
+# Define the jobs (tasks) to run
+jobs:
+  # Job 1: Test and Build
+  test-and-build:
+    # Use Ubuntu as the operating system
+    runs-on: ubuntu-latest
+    
+    steps:
+    # Step 1: Get your code
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    # Step 2: Set up Node.js (React needs this)
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    # Step 3: Install dependencies
+    - name: Install dependencies
+      run: npm install
+    
+    # Step 4: Run linting (check code quality)
+    - name: Run ESLint
+      run: npm run lint
+    
+    # Step 5: Build the project
+    - name: Build project
+      run: npm run build
+    
+    # Step 6: Upload build artifacts (optional - saves the built files)
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-files
+        path: dist/

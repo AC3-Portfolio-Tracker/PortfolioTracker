@@ -11,7 +11,7 @@ import {
   TableHead,
   TableRow,
   Button,
-  useTheme,
+  useTheme, // theme is used in sx prop later, so useTheme() call is fine
   IconButton,
   Tooltip,
 } from "@mui/material";
@@ -24,7 +24,7 @@ const TaxableIncome = () => {
   const [incomeRows, setIncomeRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const theme = useTheme();
+  const theme = useTheme(); // Keep useTheme as it's used in sx props
 
   useEffect(() => {
     const fetchDividendData = async () => {
@@ -34,6 +34,7 @@ const TaxableIncome = () => {
 
       if (!user) {
         console.error("User not logged in.");
+        setLoading(false); // Set loading to false if user is not logged in
         return;
       }
 
@@ -53,8 +54,21 @@ const TaxableIncome = () => {
       }
 
       const formatted = data.map((row) => {
-        const total = parseFloat(row.total_amount ?? row.quantity * row.price ?? 0);
-        const franking = parseFloat(row.notes?.match(/\d+(\.\d+)?/)?.[0] ?? 0);
+        // Corrected calculation for total
+        let valueToParseTotal;
+        if (row.total_amount != null) {
+          valueToParseTotal = row.total_amount;
+        } else if (row.quantity != null && row.price != null) {
+          valueToParseTotal = row.quantity * row.price;
+        } else {
+          valueToParseTotal = 0; // Default to 0 if not enough data
+        }
+        const total = parseFloat(valueToParseTotal) || 0; // Ensure NaN becomes 0
+
+        // Corrected calculation for franking (for robustness and consistency)
+        const frankingValueString = row.notes?.match(/\d+(\.\d+)?/)?.[0];
+        const franking = parseFloat(frankingValueString) || 0; // Ensure NaN becomes 0
+
         return {
           holding: row.securities?.symbol || row.security_id,
           paidDate: new Date(row.date).toLocaleDateString("en-AU", {
@@ -63,9 +77,9 @@ const TaxableIncome = () => {
             year: "numeric",
           }),
           totalIncome: total,
-          franked: total,
-          unfranked: 0,
-          withholdingTax: 0,
+          franked: total, // Assuming total income is fully franked as per original logic
+          unfranked: 0,   // Assuming no unfranked part as per original logic
+          withholdingTax: 0, // Assuming no withholding tax as per original logic
           frankingCredits: franking,
           grossIncome: total + franking,
         };
@@ -76,12 +90,38 @@ const TaxableIncome = () => {
     };
 
     fetchDividendData();
-  }, []);
+  }, []); // Removed 'theme' from dependency array
 
   const total = (key) => incomeRows.reduce((sum, r) => sum + r[key], 0);
 
   const exportToExcel = () => {
-    const worksheet = XLSX.utils.json_to_sheet(incomeRows);
+    // Prepare data for export, ensuring numbers are formatted as numbers if needed
+    const exportData = incomeRows.map(row => ({
+      Holding: row.holding,
+      "Paid Date": row.paidDate,
+      "Total Income": row.totalIncome,
+      "Franked": row.franked,
+      "Unfranked": row.unfranked,
+      "Withholding Tax": row.withholdingTax,
+      "Franking Credits": row.frankingCredits,
+      "Gross Income": row.grossIncome,
+    }));
+
+    // Add totals row for export
+    if (incomeRows.length > 0) {
+        exportData.push({
+            Holding: "Total",
+            "Paid Date": "",
+            "Total Income": total("totalIncome"),
+            "Franked": total("franked"),
+            "Unfranked": total("unfranked"),
+            "Withholding Tax": total("withholdingTax"),
+            "Franking Credits": total("frankingCredits"),
+            "Gross Income": total("grossIncome"),
+        });
+    }
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "TaxableIncome");
     XLSX.writeFile(workbook, "TaxableIncomeReport.xlsx");
@@ -104,7 +144,7 @@ const TaxableIncome = () => {
           </Typography>
         </Box>
         <Tooltip title="Download as XLSX">
-          <IconButton onClick={exportToExcel}>
+          <IconButton onClick={exportToExcel} disabled={incomeRows.length === 0}>
             <Download />
           </IconButton>
         </Tooltip>
@@ -147,7 +187,7 @@ const TaxableIncome = () => {
                       <TableCell align="right">${row.unfranked.toFixed(2)}</TableCell>
                       <TableCell align="right">${row.withholdingTax.toFixed(2)}</TableCell>
                       <TableCell align="right">${row.frankingCredits.toFixed(2)}</TableCell>
-                      <TableCell align="right" style={{ color: "lightgreen", fontWeight: 600 }}>
+                      <TableCell align="right" style={{ color: theme.palette.success.main, fontWeight: 600 }}> {/* Used theme here */}
                         ${row.grossIncome.toFixed(2)}
                       </TableCell>
                     </TableRow>
@@ -156,9 +196,10 @@ const TaxableIncome = () => {
 
                 {incomeRows.length > 0 && (
                   <TableRow
-                    sx={(theme) => ({
-                      backgroundColor: theme.palette.mode === "dark" ? "#1f1f1f" : "#e0e0e0",
-                    })}
+                    sx={{ // theme is implicitly available here from useTheme() via the sx prop function signature
+                      backgroundColor: theme.palette.mode === "dark" ? theme.palette.grey[800] : theme.palette.grey[200],
+                      fontWeight: "bold",
+                    }}
                   >
                     <TableCell><b>Total</b></TableCell>
                     <TableCell />
@@ -167,7 +208,7 @@ const TaxableIncome = () => {
                     <TableCell align="right"><b>${total("unfranked").toFixed(2)}</b></TableCell>
                     <TableCell align="right"><b>${total("withholdingTax").toFixed(2)}</b></TableCell>
                     <TableCell align="right"><b>${total("frankingCredits").toFixed(2)}</b></TableCell>
-                    <TableCell align="right" sx={{ color: "lightgreen", fontWeight: 600 }}>
+                    <TableCell align="right" sx={{ color: theme.palette.success.main, fontWeight: "bold" }}> {/* Used theme here */}
                       ${total("grossIncome").toFixed(2)}
                     </TableCell>
                   </TableRow>

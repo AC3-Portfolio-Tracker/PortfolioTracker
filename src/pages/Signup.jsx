@@ -26,7 +26,8 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   backgroundColor: theme.palette.background.paper,
 }));
 
-const StyledTextField = styled(TextField)(({ theme }) => ({
+// Corrected StyledTextField
+const StyledTextField = styled(TextField)(() => ({ // Removed 'theme' from destructuring
   // The width will be controlled by the parent Grid item (fullWidth prop on TextField or width: "100%" here)
   width: "100%",
 }));
@@ -86,6 +87,8 @@ function SignupPage() {
       } else if (result && result.user) {
         navigate("/");
       } else {
+        // Fallback for unexpected result, perhaps treat as needing confirmation or show generic success
+        // For now, let's assume it means confirmation is needed if user object isn't present
         setSuccess(true);
       }
     } catch (err) {
@@ -163,8 +166,6 @@ function SignupPage() {
           {/* Grid container will manage spacing between rows of fields */}
           <Grid container spacing={2}>
             <Grid item xs={12}>
-              {" "}
-              {/* Changed sm={6} to xs={12} */}
               <StyledTextField
                 label="First Name"
                 value={firstName}
@@ -175,8 +176,6 @@ function SignupPage() {
               />
             </Grid>
             <Grid item xs={12}>
-              {" "}
-              {/* Changed sm={6} to xs={12} */}
               <StyledTextField
                 label="Last Name"
                 value={lastName}

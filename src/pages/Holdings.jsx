@@ -122,10 +122,4 @@ const Holdings = () => {
   );
 };
 
-const cellStyle = {
-  border: "1px solid #ddd",
-  padding: "8px",
-  textAlign: "center",
-};
-
 export default Holdings;

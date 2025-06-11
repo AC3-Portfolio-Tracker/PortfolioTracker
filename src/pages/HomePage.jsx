@@ -82,8 +82,6 @@ const HomePage = () => {
     const chartPoints = [];
     // Map to store values for each market on a given date for stacking
     // dateString -> { ASX: value, NASDAQ: value, ... }
-    const dailyMarketValues = new Map(); 
-
     // Ensure activities are sorted by date for chronological processing
     const sortedActivities = [...activitiesData].sort((a, b) => new Date(a.date) - new Date(b.date));
 

@@ -23,7 +23,7 @@ function SettingsPage() {
     notification_preferences: {},
   });
   const [localProfile, setLocalProfile] = useState(null);
-  const [currencies, setCurrencies] = useState([
+  const [currencies, _setCurrencies] = useState([ // Corrected: Renamed setCurrencies
     { code: "USD", name: "United States Dollar" },
     { code: "EUR", name: "Euro" },
     { code: "GBP", name: "British Pound" },

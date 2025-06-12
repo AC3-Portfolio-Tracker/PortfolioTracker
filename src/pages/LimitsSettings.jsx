@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react"; // Added useCallback
 import "../components/LimitsSettings.css";
 import {
   Button,
@@ -44,11 +44,7 @@ function LimitsSettings({ userSettings, updateUserSettings, setError, setSuccess
   });
   const [selectedAccountId, setSelectedAccountId] = useState("");
 
-  useEffect(() => {
-    fetchData();
-  }, [user]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!user) return;
 
     setLoading(true);
@@ -66,6 +62,8 @@ function LimitsSettings({ userSettings, updateUserSettings, setError, setSuccess
       // Extract limits from settings
       if (settingsData?.notification_preferences?.contribution_limits) {
         setLimits(settingsData.notification_preferences.contribution_limits);
+      } else {
+        setLimits([]); // Ensure limits is an array
       }
     } catch (err) {
       console.error("Error fetching data:", err);
@@ -73,7 +71,11 @@ function LimitsSettings({ userSettings, updateUserSettings, setError, setSuccess
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, setError]); // Added setError to dependency array
+
+  useEffect(() => {
+    fetchData();
+  }, [user, fetchData]); // Added fetchData to dependency array
 
   const handleOpen = (limit = null) => {
     if (limit) {
@@ -105,6 +107,9 @@ function LimitsSettings({ userSettings, updateUserSettings, setError, setSuccess
     const { name, value } = e.target;
     if (name === "limit_amount" && value && isNaN(parseFloat(value))) {
       return; // Allow only numbers for limit amount
+    }
+    if (name === "contribution_amount" && value && isNaN(parseFloat(value))) {
+        return; 
     }
     setCurrentLimit({
       ...currentLimit,
@@ -140,29 +145,42 @@ function LimitsSettings({ userSettings, updateUserSettings, setError, setSuccess
       setError("Group name and limit amount are required");
       return;
     }
+    if (parseFloat(currentLimit.limit_amount) <= 0) {
+        setError("Limit amount must be greater than zero.");
+        return;
+    }
+    if (currentLimit.contribution_amount && parseFloat(currentLimit.contribution_amount) < 0) {
+        setError("Contribution amount cannot be negative.");
+        return;
+    }
+
 
     setSaving(true);
     try {
       let updatedLimits = [...limits];
       
       if (editMode) {
-        const index = limits.findIndex(l => l.group_name === currentLimit.group_name);
+        const index = limits.findIndex(l => l.group_name === currentLimit.group_name && l.contribution_year === currentLimit.contribution_year);
         if (index >= 0) {
           updatedLimits[index] = currentLimit;
+        } else {
+          // Fallback if not found (should ideally not happen if editMode is set correctly)
+          updatedLimits.push(currentLimit);
         }
       } else {
-        // Check for duplicate group name
-        if (limits.some(l => l.group_name === currentLimit.group_name)) {
-          setError("A limit with this group name already exists");
+        // Check for duplicate group name for the same year
+        if (limits.some(l => l.group_name === currentLimit.group_name && l.contribution_year === currentLimit.contribution_year)) {
+          setError(`A limit with the name "${currentLimit.group_name}" already exists for the year ${currentLimit.contribution_year}.`);
           setSaving(false);
           return;
         }
         updatedLimits.push(currentLimit);
       }
       
+      const basePreferences = userSettings?.notification_preferences || {};
       // Update in Supabase
       const updatedPreferences = {
-        ...userSettings.notification_preferences,
+        ...basePreferences,
         contribution_limits: updatedLimits,
       };
       
@@ -174,9 +192,10 @@ function LimitsSettings({ userSettings, updateUserSettings, setError, setSuccess
       
       // Update local state
       setLimits(updatedLimits);
-      updateUserSettings({
+      updateUserSettings(prevSettings => ({
+        ...prevSettings,
         notification_preferences: updatedPreferences,
-      });
+      }));
       
       setSuccess(editMode ? "Limit updated successfully" : "Limit added successfully");
       handleClose();
@@ -188,15 +207,16 @@ function LimitsSettings({ userSettings, updateUserSettings, setError, setSuccess
     }
   };
 
-  const handleDeleteLimit = async (groupName) => {
-    if (!window.confirm("Are you sure you want to delete this contribution limit?")) return;
+  const handleDeleteLimit = async (groupName, year) => {
+    if (!window.confirm(`Are you sure you want to delete the contribution limit "${groupName}" for ${year}?`)) return;
     
     try {
-      const updatedLimits = limits.filter(l => l.group_name !== groupName);
+      const updatedLimits = limits.filter(l => !(l.group_name === groupName && l.contribution_year === year));
       
+      const basePreferences = userSettings?.notification_preferences || {};
       // Update in Supabase
       const updatedPreferences = {
-        ...userSettings.notification_preferences,
+        ...basePreferences,
         contribution_limits: updatedLimits,
       };
       
@@ -208,9 +228,10 @@ function LimitsSettings({ userSettings, updateUserSettings, setError, setSuccess
       
       // Update local state
       setLimits(updatedLimits);
-      updateUserSettings({
+      updateUserSettings(prevSettings => ({
+        ...prevSettings,
         notification_preferences: updatedPreferences,
-      });
+      }));
       
       setSuccess("Limit deleted successfully");
     } catch (err) {
@@ -226,15 +247,15 @@ function LimitsSettings({ userSettings, updateUserSettings, setError, setSuccess
     if (currentYearLimits.length === 0) {
       return (
         <Typography variant="body1" color="textSecondary" align="center" sx={{ my: 4 }}>
-          No contribution limits set for the current year.
+          No contribution limits set for the current year. Add one to get started.
         </Typography>
       );
     }
     
     return (
       <div className="limits-container">
-        <Typography variant="h6" gutterBottom>
-          Current Year ({currentYear})
+        <Typography variant="h5" gutterBottom sx={{ textAlign: 'center', mb: 3}}>
+          Contribution Limits for {currentYear}
         </Typography>
         
         <Grid container spacing={3}>
@@ -242,10 +263,10 @@ function LimitsSettings({ userSettings, updateUserSettings, setError, setSuccess
             // Calculate progress percentage
             const contribution = parseFloat(limit.contribution_amount || 0);
             const limitAmount = parseFloat(limit.limit_amount);
-            const percentage = limitAmount ? Math.min(100, (contribution / limitAmount) * 100) : 0;
+            const percentage = limitAmount > 0 ? Math.min(100, (contribution / limitAmount) * 100) : 0;
             
             return (
-              <Grid item xs={12} md={6} key={limit.group_name}>
+              <Grid item xs={12} md={6} key={`${limit.group_name}-${limit.contribution_year}`}>
                 <Card className="limit-card">
                   <CardContent>
                     <Box display="flex" justifyContent="space-between" alignItems="center">
@@ -254,7 +275,7 @@ function LimitsSettings({ userSettings, updateUserSettings, setError, setSuccess
                         <IconButton size="small" onClick={() => handleOpen(limit)}>
                           <EditIcon fontSize="small" />
                         </IconButton>
-                        <IconButton size="small" onClick={() => handleDeleteLimit(limit.group_name)}>
+                        <IconButton size="small" onClick={() => handleDeleteLimit(limit.group_name, limit.contribution_year)}>
                           <DeleteIcon fontSize="small" />
                         </IconButton>
                       </Box>
@@ -265,26 +286,42 @@ function LimitsSettings({ userSettings, updateUserSettings, setError, setSuccess
                     <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                       <div>
                         <Typography variant="body2">
-                          <strong>Your Limit:</strong> ${parseFloat(limit.limit_amount).toFixed(2)}
+                          <strong>Limit:</strong> ${parseFloat(limit.limit_amount).toFixed(2)}
                         </Typography>
-                        <Typography variant="body2" color={contribution > 0 ? "primary" : "textSecondary"}>
+                        <Typography variant="body2" color={contribution > 0 ? "primary.main" : "textSecondary"}>
                           <strong>Contributed:</strong> ${contribution.toFixed(2)}
+                        </Typography>
+                         <Typography variant="body2" color={contribution > limitAmount ? "error.main" : "text.secondary"}>
+                          <strong>Remaining:</strong> ${(limitAmount - contribution).toFixed(2)}
                         </Typography>
                       </div>
                       
-                      <Box position="relative" display="inline-flex">
-                        <div className="progress-circle">
-                          <div className="progress-circle-inner" style={{ 
-                            background: `conic-gradient(
-                              #1976d2 ${percentage * 3.6}deg, 
-                              #e0e0e0 ${percentage * 3.6}deg
-                            )`
-                          }}>
-                            <div className="progress-circle-content">
-                              {percentage.toFixed(0)}%
-                            </div>
-                          </div>
-                        </div>
+                      <Box position="relative" display="inline-flex" title={`${percentage.toFixed(0)}% Utilized`}>
+                        <CircularProgress 
+                            variant="determinate" 
+                            value={percentage} 
+                            size={60} 
+                            thickness={5}
+                            sx={{
+                                color: percentage > 100 ? 'error.main' : (percentage > 80 ? 'warning.main' : 'success.main'),
+                                backgroundColor: (theme) => theme.palette.grey[theme.palette.mode === 'light' ? 200 : 700],
+                                borderRadius: '50%',
+                            }}
+                        />
+                        <Box
+                          top={0}
+                          left={0}
+                          bottom={0}
+                          right={0}
+                          position="absolute"
+                          display="flex"
+                          alignItems="center"
+                          justifyContent="center"
+                        >
+                          <Typography variant="caption" component="div" color="text.secondary">
+                            {`${percentage.toFixed(0)}%`}
+                          </Typography>
+                        </Box>
                       </Box>
                     </Box>
                     
@@ -293,13 +330,24 @@ function LimitsSettings({ userSettings, updateUserSettings, setError, setSuccess
                         <Typography variant="subtitle2" gutterBottom>
                           Assigned Accounts:
                         </Typography>
-                        <Box className="account-chips">
+                        <Box className="account-chips" sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                           {limit.assigned_accounts.map(accountId => {
                             const account = accounts.find(a => a.id === accountId);
                             return account ? (
-                              <span key={accountId} className="account-chip">
+                               <Box
+                                key={accountId}
+                                component="span"
+                                sx={{
+                                    p: '4px 8px',
+                                    borderRadius: '16px',
+                                    backgroundColor: 'action.hover',
+                                    fontSize: '0.8rem',
+                                    mr: 0.5,
+                                    mb: 0.5
+                                }}
+                                >
                                 {account.name}
-                              </span>
+                                </Box>
                             ) : null;
                           })}
                         </Box>
@@ -323,14 +371,14 @@ function LimitsSettings({ userSettings, updateUserSettings, setError, setSuccess
     <div className="limits-settings">
       <div className="limits-header">
         <h2>Contribution Limits</h2>
-        <p>Manage your contribution limits on your portfolio.</p>
+        <p>Manage your contribution limits on your portfolio for specific accounts and years.</p>
         <Button 
           variant="contained" 
           color="primary" 
           startIcon={<span>+</span>}
           onClick={() => handleOpen()}
         >
-          Add Contribution Limit
+          Add Limit
         </Button>
       </div>
 
@@ -344,19 +392,21 @@ function LimitsSettings({ userSettings, updateUserSettings, setError, setSuccess
 
       <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
         <DialogTitle>
-          {editMode ? "Edit Contribution Limit" : "Add Contribution Limit"}
+          {editMode ? "Edit Contribution Limit" : "Add New Contribution Limit"}
         </DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12} sm={8}>
               <TextField
                 name="group_name"
-                label="Group Name"
+                label="Limit Name (e.g., TFSA, RRSP)"
                 value={currentLimit.group_name}
                 onChange={handleChange}
                 fullWidth
                 required
-                disabled={editMode} // Don't allow changing the group name in edit mode to maintain unique identifiers
+                disabled={editMode} // Group name and year together make the unique key.
+                error={!currentLimit.group_name}
+                helperText={!currentLimit.group_name ? "Limit name is required" : ""}
               />
             </Grid>
             
@@ -370,6 +420,7 @@ function LimitsSettings({ userSettings, updateUserSettings, setError, setSuccess
                 fullWidth
                 required
                 inputProps={{ min: 2000, max: 2100 }}
+                disabled={editMode}
               />
             </Grid>
             
@@ -379,9 +430,15 @@ function LimitsSettings({ userSettings, updateUserSettings, setError, setSuccess
                 label="Limit Amount ($)"
                 value={currentLimit.limit_amount}
                 onChange={handleChange}
+                type="number"
                 fullWidth
                 required
-                inputProps={{ min: 0, step: "0.01" }}
+                inputProps={{ min: 0.01, step: "0.01" }}
+                error={!currentLimit.limit_amount || parseFloat(currentLimit.limit_amount) <= 0}
+                helperText={
+                    !currentLimit.limit_amount ? "Limit amount is required" :
+                    parseFloat(currentLimit.limit_amount) <= 0 ? "Must be greater than 0" : ""
+                }
               />
             </Grid>
             
@@ -395,63 +452,78 @@ function LimitsSettings({ userSettings, updateUserSettings, setError, setSuccess
             {accounts.length === 0 ? (
               <Grid item xs={12}>
                 <Typography variant="body2" color="textSecondary">
-                  No accounts available. Please add accounts first.
+                  No accounts available. Please add accounts in Portfolio Settings first.
                 </Typography>
               </Grid>
             ) : (
               <>
-                <Grid item xs={9}>
+                <Grid item xs={12} sm={9}>
                   <FormControl fullWidth>
-                    <InputLabel>Select Account</InputLabel>
+                    <InputLabel>Select Account to Assign</InputLabel>
                     <Select
                       value={selectedAccountId}
                       onChange={(e) => setSelectedAccountId(e.target.value)}
-                      label="Select Account"
+                      label="Select Account to Assign"
                     >
                       <MenuItem value="">
-                        <em>None</em>
+                        <em>-- Select an Account --</em>
                       </MenuItem>
                       {accounts
                         .filter(account => !currentLimit.assigned_accounts.includes(account.id))
                         .map(account => (
                           <MenuItem key={account.id} value={account.id}>
-                            {account.name}
+                            {account.name} ({account.credentials?.group || 'N/A'})
                           </MenuItem>
                         ))}
                     </Select>
                   </FormControl>
                 </Grid>
                 
-                <Grid item xs={3}>
+                <Grid item xs={12} sm={3}>
                   <Button
                     variant="outlined"
                     onClick={handleAddAssignedAccount}
                     fullWidth
-                    sx={{ height: '100%' }}
+                    sx={{ height: '56px' }} // Match TextField height
                     disabled={!selectedAccountId}
                   >
-                    Assign
+                    Assign Account
                   </Button>
                 </Grid>
                 
                 {currentLimit.assigned_accounts.length > 0 && (
                   <Grid item xs={12}>
-                    <Typography variant="subtitle2" gutterBottom>
+                    <Typography variant="subtitle2" gutterBottom sx={{mt:1}}>
                       Assigned Accounts:
                     </Typography>
-                    <Box className="assigned-accounts-list">
+                    <Box 
+                        className="assigned-accounts-list" 
+                        sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}
+                    >
                       {currentLimit.assigned_accounts.map(accountId => {
                         const account = accounts.find(a => a.id === accountId);
                         return account ? (
-                          <div key={accountId} className="assigned-account-item">
+                          <Box 
+                            key={accountId} 
+                            className="assigned-account-item"
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                p: '4px 8px',
+                                borderRadius: '16px',
+                                backgroundColor: 'action.hover',
+                                gap: 0.5
+                            }}
+                            >
                             <span>{account.name}</span>
                             <IconButton 
                               size="small" 
                               onClick={() => handleRemoveAssignedAccount(accountId)}
+                              aria-label={`Remove ${account.name}`}
                             >
-                              <DeleteIcon fontSize="small" />
+                              <DeleteIcon fontSize="inherit" />
                             </IconButton>
-                          </div>
+                          </Box>
                         ) : null;
                       })}
                     </Box>
@@ -462,18 +534,22 @@ function LimitsSettings({ userSettings, updateUserSettings, setError, setSuccess
             
             {editMode && (
               <Grid item xs={12}>
-                <Divider sx={{ my: 1 }} />
+                <Divider sx={{ my: 2 }} />
                 <Typography variant="subtitle1" gutterBottom>
                   Track Contributions
                 </Typography>
                 <TextField
                   name="contribution_amount"
-                  label="Current Contribution Amount ($)"
+                  label="Current Total Contribution ($) for this Limit"
                   type="number"
                   value={currentLimit.contribution_amount || 0}
                   onChange={handleChange}
                   fullWidth
                   inputProps={{ min: 0, step: "0.01" }}
+                   error={currentLimit.contribution_amount && parseFloat(currentLimit.contribution_amount) < 0}
+                  helperText={
+                      currentLimit.contribution_amount && parseFloat(currentLimit.contribution_amount) < 0 ? "Cannot be negative" : ""
+                  }
                 />
               </Grid>
             )}
@@ -485,9 +561,15 @@ function LimitsSettings({ userSettings, updateUserSettings, setError, setSuccess
             onClick={saveLimit} 
             variant="contained" 
             color="primary"
-            disabled={saving}
+            disabled={
+                saving || 
+                !currentLimit.group_name || 
+                !currentLimit.limit_amount || 
+                parseFloat(currentLimit.limit_amount) <= 0 ||
+                (currentLimit.contribution_amount && parseFloat(currentLimit.contribution_amount) < 0)
+            }
           >
-            {saving ? "Saving..." : editMode ? "Update Limit" : "Add Limit"}
+            {saving ? <CircularProgress size={24}/> : editMode ? "Update Limit" : "Add Limit"}
           </Button>
         </DialogActions>
       </Dialog>

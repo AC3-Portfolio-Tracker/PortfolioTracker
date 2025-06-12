@@ -142,7 +142,7 @@ export const AuthProvider = ({ children }) => {
     },
     updateProfile: async (profileDataToUpdate) => {
         if (!user) throw new Error("No user logged in.");
-        const { id, ...updateData } = profileDataToUpdate;
+        const { id: _id, ...updateData } = profileDataToUpdate; // FIX: Renamed id to _id
 
         // setLoading(true); // Optional: set loading true
         const { data: updatedProfileData, error } = await supabase
@@ -167,6 +167,8 @@ export const AuthProvider = ({ children }) => {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
+// FIX: Added eslint-disable-next-line to address the react-refresh/only-export-components warning
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {

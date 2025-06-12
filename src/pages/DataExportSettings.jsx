@@ -18,19 +18,24 @@ import {
 import { 
   FileDownload as FileDownloadIcon,
   TableChart as TableIcon,
-  BarChart as BarChartIcon,
-  Settings as SettingsIcon,
-  Timeline as TimelineIcon
+  // BarChart as BarChartIcon, // Re-used for Goals, that's fine
+  // Settings as SettingsIcon, // Re-used for Accounts, that's fine
+  Timeline as TimelineIcon,
+  AccountBalanceWallet as AccountsIcon, // Example: different icon for Accounts
+  Assessment as ActivitiesIcon, // Example: different icon for Activities
+  Flag as GoalsIcon, // Example: different icon for Goals
 } from "@mui/icons-material";
 import { useAuth } from "../contexts/AuthContext";
 import { 
+  supabase, // Import supabase client if needed for direct table access (e.g., snapshots)
   holdings as holdingsAPI, 
   activities as activitiesAPI, 
   brokers as brokersAPI, 
   settings as settingsAPI 
 } from "../lib/supabase";
 
-function DataExportSettings({ userSettings, setError, setSuccess }) {
+// Removed userSettings prop as it was unused
+function DataExportSettings({ setError, setSuccess }) {
   const { user } = useAuth();
   const [selectedExports, setSelectedExports] = useState({
     accounts: true,
@@ -53,92 +58,102 @@ function DataExportSettings({ userSettings, setError, setSuccess }) {
     setExportFormat(event.target.value);
   };
 
+  // Removed unnecessary try/catch from here; errors will propagate to handleExport
   const prepareExportData = async () => {
     const exportData = {};
     
-    try {
-      // Fetch accounts (brokers)
-      if (selectedExports.accounts) {
-        const { data: accountsData, error: accountsError } = await brokersAPI.getBrokers(user.id);
-        if (accountsError) throw accountsError;
-        exportData.accounts = accountsData;
-      }
-      
-      // Fetch activities
-      if (selectedExports.activities) {
-        const { data: activitiesData, error: activitiesError } = await activitiesAPI.getActivities(user.id);
-        if (activitiesError) throw activitiesError;
-        exportData.activities = activitiesData;
-      }
-      
-      // Fetch holdings
-      if (selectedExports.holdings) {
-        const { data: holdingsData, error: holdingsError } = await holdingsAPI.getHoldings(user.id);
-        if (holdingsError) throw holdingsError;
-        exportData.holdings = holdingsData;
-      }
-      
-      // Fetch goals from settings
-      if (selectedExports.goals) {
-        const { data: settingsData, error: settingsError } = await settingsAPI.getSettings(user.id);
-        if (settingsError) throw settingsError;
-        
-        exportData.goals = settingsData?.notification_preferences?.investment_goals || [];
-      }
-      
-      // Fetch portfolio snapshots
-      if (selectedExports.snapshots) {
-        const { data: settingsData, error: settingsError } = await settingsAPI.getSettings(user.id);
-        if (settingsError) throw settingsError;
-        
-        // This is a placeholder - in a real app, you'd fetch from portfolio_snapshots table
-        exportData.snapshots = [];
-      }
-      
-      return exportData;
-    } catch (error) {
-      throw error;
+    if (!user) { // Guard clause
+        throw new Error("User not authenticated for data export.");
     }
+    
+    // Fetch accounts (brokers)
+    if (selectedExports.accounts) {
+      const { data: accountsData, error: accountsError } = await brokersAPI.getBrokers(user.id);
+      if (accountsError) throw accountsError;
+      exportData.accounts = accountsData || []; // Ensure it's an array
+    }
+    
+    // Fetch activities
+    if (selectedExports.activities) {
+      const { data: activitiesData, error: activitiesError } = await activitiesAPI.getActivities(user.id);
+      if (activitiesError) throw activitiesError;
+      exportData.activities = activitiesData || []; // Ensure it's an array
+    }
+    
+    // Fetch holdings
+    if (selectedExports.holdings) {
+      const { data: holdingsData, error: holdingsError } = await holdingsAPI.getHoldings(user.id);
+      if (holdingsError) throw holdingsError;
+      exportData.holdings = holdingsData || []; // Ensure it's an array
+    }
+    
+    // Fetch goals from settings
+    if (selectedExports.goals) {
+      const { data: settingsFromDB, error: settingsError } = await settingsAPI.getSettings(user.id);
+      if (settingsError) throw settingsError;
+      exportData.goals = settingsFromDB?.notification_preferences?.investment_goals || [];
+    }
+    
+    // Fetch portfolio snapshots
+    if (selectedExports.snapshots) {
+      // TODO: Replace with actual fetching from 'portfolio_snapshots' table
+      // Example of how you might fetch it:
+      const { data: snapshotsData, error: snapshotsError } = await supabase
+        .from('portfolio_snapshots')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('date', { ascending: false });
+
+      if (snapshotsError) {
+        console.warn("Could not fetch portfolio snapshots:", snapshotsError.message);
+        // Don't throw, just provide empty or placeholder if snapshots are optional
+        exportData.snapshots = [{ note: `Snapshots not available or error: ${snapshotsError.message}` }];
+      } else {
+        exportData.snapshots = snapshotsData || [];
+      }
+    }
+    
+    return exportData;
   };
 
   const handleExport = async () => {
     if (!Object.values(selectedExports).some(Boolean)) {
-      setError("Please select at least one data type to export");
+      if (setError) setError("Please select at least one data type to export");
       return;
     }
     
     setLoading(true);
+    // Clear previous messages
+    if (setError) setError(null);
+    if (setSuccess) setSuccess(null);
+
     try {
       const exportData = await prepareExportData();
       
-      // Convert to selected format
       let dataStr, fileExt, contentType;
       
       switch (exportFormat) {
         case "json":
           dataStr = JSON.stringify(exportData, null, 2);
           fileExt = "json";
-          contentType = "application/json";
+          contentType = "application/json;charset=utf-8;";
           break;
         case "csv":
-          // This is a simple implementation - for a real app, 
-          // you'd want a more sophisticated CSV conversion logic
           dataStr = convertToCSV(exportData);
           fileExt = "csv";
-          contentType = "text/csv";
+          contentType = "text/csv;charset=utf-8;";
           break;
         case "sql":
           dataStr = convertToSQL(exportData);
           fileExt = "sql";
-          contentType = "application/sql";
+          contentType = "application/sql;charset=utf-8;";
           break;
-        default:
+        default: // Fallback to JSON
           dataStr = JSON.stringify(exportData, null, 2);
           fileExt = "json";
-          contentType = "application/json";
+          contentType = "application/json;charset=utf-8;";
       }
       
-      // Create and download the file
       const dataBlob = new Blob([dataStr], { type: contentType });
       const url = window.URL.createObjectURL(dataBlob);
       const link = document.createElement("a");
@@ -146,12 +161,13 @@ function DataExportSettings({ userSettings, setError, setSuccess }) {
       link.setAttribute("download", `portfolio_export_${new Date().toISOString().slice(0,10)}.${fileExt}`);
       document.body.appendChild(link);
       link.click();
-      link.remove();
+      document.body.removeChild(link); // Clean up the link
+      window.URL.revokeObjectURL(url); // Clean up the blob URL
       
-      setSuccess("Data exported successfully");
+      if (setSuccess) setSuccess("Data exported successfully!");
     } catch (err) {
       console.error("Error exporting data:", err);
-      setError("Failed to export data. Please try again.");
+      if (setError) setError(`Failed to export data: ${err.message}. Please try again.`);
     } finally {
       setLoading(false);
     }
@@ -159,184 +175,92 @@ function DataExportSettings({ userSettings, setError, setSuccess }) {
 
   const convertToCSV = (data) => {
     const csvParts = [];
-    
-    // For each data type, convert to CSV
     Object.entries(data).forEach(([key, records]) => {
-      if (!records || records.length === 0) return;
-      
-      // Add section header
+      if (!records || !Array.isArray(records) || records.length === 0) return;
       csvParts.push(`\n# ${key.toUpperCase()}\n`);
-      
-      // Get headers from first record
       const headers = Object.keys(records[0]);
       csvParts.push(headers.join(",") + "\n");
-      
-      // Add data rows
       records.forEach(record => {
         const row = headers.map(header => {
-          const value = record[header];
-          // Handle nested objects, arrays, and complex values
-          if (typeof value === 'object' && value !== null) {
-            return `"${JSON.stringify(value).replace(/"/g, '""')}"`;
+          let value = record[header];
+          if (value === null || value === undefined) value = '';
+          else if (typeof value === 'object') value = JSON.stringify(value);
+          
+          const valueStr = String(value);
+          // Escape double quotes and wrap in double quotes if it contains comma, newline or double quote
+          if (valueStr.includes(',') || valueStr.includes('\n') || valueStr.includes('"')) {
+            return `"${valueStr.replace(/"/g, '""')}"`;
           }
-          // Handle strings with commas
-          if (typeof value === 'string' && value.includes(',')) {
-            return `"${value}"`;
-          }
-          return value ?? '';
+          return valueStr;
         }).join(",");
         csvParts.push(row + "\n");
       });
     });
-    
     return csvParts.join("");
   };
 
   const convertToSQL = (data) => {
     const sqlParts = [];
-    
-    // Add header comment
     sqlParts.push(`-- Portfolio Tracker Export\n-- Generated: ${new Date().toISOString()}\n\n`);
-    
-    // For each data type, generate INSERT statements
     Object.entries(data).forEach(([tableName, records]) => {
-      if (!records || records.length === 0) return;
-      
-      // Add section header
-      sqlParts.push(`-- ${tableName.toUpperCase()} Table\n`);
-      
+      if (!records || !Array.isArray(records) || records.length === 0) return;
+      sqlParts.push(`-- Data for table: ${tableName.toUpperCase()}\n`);
       records.forEach(record => {
-        const columns = Object.keys(record);
+        const columns = Object.keys(record).map(col => `"${col}"`); // Quote column names
         const values = Object.values(record).map(value => {
           if (value === null || value === undefined) return 'NULL';
-          if (typeof value === 'string') return `'${value.replace(/'/g, "''")}'`;
-          if (typeof value === 'object') return `'${JSON.stringify(value).replace(/'/g, "''")}'`;
-          return value;
+          if (typeof value === 'string') return `'${value.replace(/'/g, "''")}'`; // Escape single quotes
+          if (typeof value === 'boolean') return value ? 'TRUE' : 'FALSE';
+          if (typeof value === 'object') return `'${JSON.stringify(value).replace(/'/g, "''")}'`; // Stringify objects/arrays
+          return value; // Numbers
         });
-        
-        sqlParts.push(`INSERT INTO ${tableName} (${columns.join(", ")}) VALUES (${values.join(", ")});\n`);
+        sqlParts.push(`INSERT INTO "${tableName}" (${columns.join(", ")}) VALUES (${values.join(", ")});\n`);
       });
-      
       sqlParts.push("\n");
     });
-    
     return sqlParts.join("");
   };
 
   const selectAll = () => {
-    setSelectedExports({
-      accounts: true,
-      activities: true,
-      holdings: true,
-      goals: true,
-      snapshots: true,
-    });
+    setSelectedExports({ accounts: true, activities: true, holdings: true, goals: true, snapshots: true });
   };
 
   const selectNone = () => {
-    setSelectedExports({
-      accounts: false,
-      activities: false,
-      holdings: false,
-      goals: false,
-      snapshots: false,
-    });
+    setSelectedExports({ accounts: false, activities: false, holdings: false, goals: false, snapshots: false });
   };
 
   return (
     <div className="data-export-settings">
-      <div className="data-export-header">
-        <h2>Data Export</h2>
-        <p>Export your portfolio data in various formats.</p>
+      <div className="data-export-header" style={{ marginBottom: '24px' }}> {/* Added style */}
+        <Typography variant="h5" component="h2" gutterBottom>Data Export</Typography> {/* Changed to h5 */}
+        <Typography variant="body1" color="text.secondary"> {/* Changed to body1 */}
+          Export your portfolio data in various formats.
+        </Typography>
       </div>
 
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
           <Paper sx={{ p: 3, height: '100%' }}>
-            <Typography variant="h6" gutterBottom>
-              Select Data to Export
-            </Typography>
-            
-            <Box display="flex" justifyContent="space-between" mb={2}>
+            <Typography variant="h6" gutterBottom>Select Data to Export</Typography>
+            <Box display="flex" justifyContent="space-between" mb={1}>
               <Button size="small" onClick={selectAll}>Select All</Button>
               <Button size="small" onClick={selectNone}>Clear All</Button>
             </Box>
-            
             <FormGroup>
-              <FormControlLabel
-                control={
-                  <Checkbox 
-                    checked={selectedExports.accounts} 
-                    onChange={handleExportTypeChange} 
-                    name="accounts" 
-                  />
-                }
-                label={
-                  <Box display="flex" alignItems="center">
-                    <SettingsIcon fontSize="small" sx={{ mr: 1 }} />
-                    <span>Accounts</span>
-                  </Box>
-                }
+              <FormControlLabel control={<Checkbox checked={selectedExports.accounts} onChange={handleExportTypeChange} name="accounts"/>}
+                label={<Box display="flex" alignItems="center"><AccountsIcon fontSize="small" sx={{ mr: 1 }} /><span>Accounts (Brokers)</span></Box>}
               />
-              <FormControlLabel
-                control={
-                  <Checkbox 
-                    checked={selectedExports.holdings} 
-                    onChange={handleExportTypeChange} 
-                    name="holdings" 
-                  />
-                }
-                label={
-                  <Box display="flex" alignItems="center">
-                    <TableIcon fontSize="small" sx={{ mr: 1 }} />
-                    <span>Holdings</span>
-                  </Box>
-                }
+              <FormControlLabel control={<Checkbox checked={selectedExports.holdings} onChange={handleExportTypeChange} name="holdings"/>}
+                label={<Box display="flex" alignItems="center"><TableIcon fontSize="small" sx={{ mr: 1 }} /><span>Holdings</span></Box>}
               />
-              <FormControlLabel
-                control={
-                  <Checkbox 
-                    checked={selectedExports.activities} 
-                    onChange={handleExportTypeChange} 
-                    name="activities" 
-                  />
-                }
-                label={
-                  <Box display="flex" alignItems="center">
-                    <BarChartIcon fontSize="small" sx={{ mr: 1 }} />
-                    <span>Activities</span>
-                  </Box>
-                }
+              <FormControlLabel control={<Checkbox checked={selectedExports.activities} onChange={handleExportTypeChange} name="activities"/>}
+                label={<Box display="flex" alignItems="center"><ActivitiesIcon fontSize="small" sx={{ mr: 1 }} /><span>Activities (Transactions)</span></Box>}
               />
-              <FormControlLabel
-                control={
-                  <Checkbox 
-                    checked={selectedExports.goals} 
-                    onChange={handleExportTypeChange} 
-                    name="goals" 
-                  />
-                }
-                label={
-                  <Box display="flex" alignItems="center">
-                    <BarChartIcon fontSize="small" sx={{ mr: 1 }} />
-                    <span>Goals</span>
-                  </Box>
-                }
+              <FormControlLabel control={<Checkbox checked={selectedExports.goals} onChange={handleExportTypeChange} name="goals"/>}
+                label={<Box display="flex" alignItems="center"><GoalsIcon fontSize="small" sx={{ mr: 1 }} /><span>Investment Goals</span></Box>}
               />
-              <FormControlLabel
-                control={
-                  <Checkbox 
-                    checked={selectedExports.snapshots} 
-                    onChange={handleExportTypeChange} 
-                    name="snapshots" 
-                  />
-                }
-                label={
-                  <Box display="flex" alignItems="center">
-                    <TimelineIcon fontSize="small" sx={{ mr: 1 }} />
-                    <span>Portfolio History</span>
-                  </Box>
-                }
+              <FormControlLabel control={<Checkbox checked={selectedExports.snapshots} onChange={handleExportTypeChange} name="snapshots"/>}
+                label={<Box display="flex" alignItems="center"><TimelineIcon fontSize="small" sx={{ mr: 1 }} /><span>Portfolio History (Snapshots)</span></Box>}
               />
             </FormGroup>
           </Paper>
@@ -344,41 +268,26 @@ function DataExportSettings({ userSettings, setError, setSuccess }) {
         
         <Grid item xs={12} md={6}>
           <Paper sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <Typography variant="h6" gutterBottom>
-              Export Settings
-            </Typography>
-            
-            <Box>
-              <FormControl fullWidth sx={{ mb: 3 }}>
-                <InputLabel>Export Format</InputLabel>
-                <Select
-                  value={exportFormat}
-                  onChange={handleFormatChange}
-                  label="Export Format"
-                >
-                  <MenuItem value="json">JSON - Structured Data</MenuItem>
-                  <MenuItem value="csv">CSV - Spreadsheet Compatible</MenuItem>
-                  <MenuItem value="sql">SQL - Database Import Script</MenuItem>
-                </Select>
-              </FormControl>
-            </Box>
-            
-            <Divider sx={{ my: 2 }} />
-            
+            <Typography variant="h6" gutterBottom>Export Settings</Typography>
+            <FormControl fullWidth sx={{ mb: 2 }}> {/* Reduced mb */}
+              <InputLabel id="export-format-label">Export Format</InputLabel>
+              <Select labelId="export-format-label" value={exportFormat} onChange={handleFormatChange} label="Export Format">
+                <MenuItem value="json">JSON - Structured Data</MenuItem>
+                <MenuItem value="csv">CSV - Spreadsheet Compatible</MenuItem>
+                <MenuItem value="sql">SQL - Database Import Script</MenuItem>
+              </Select>
+            </FormControl>
+            <Divider sx={{ my: 1 }} /> {/* Reduced my */}
             <Box sx={{ mt: 'auto', textAlign: 'center' }}>
               <Button
-                variant="contained"
-                color="primary"
+                variant="contained" color="primary" fullWidth
                 startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <FileDownloadIcon />}
                 onClick={handleExport}
                 disabled={loading || !Object.values(selectedExports).some(Boolean)}
-                fullWidth
-                sx={{ mt: 2 }}
               >
                 {loading ? "Exporting..." : "Export Data"}
               </Button>
-              
-              <Typography variant="caption" display="block" sx={{ mt: 2, color: 'text.secondary' }}>
+              <Typography variant="caption" display="block" sx={{ mt: 1, color: 'text.secondary' }}>
                 Your data will be exported locally to your device.
               </Typography>
             </Box>
@@ -389,4 +298,4 @@ function DataExportSettings({ userSettings, setError, setSuccess }) {
   );
 }
 
-export default DataExportSettings; 
+export default DataExportSettings;

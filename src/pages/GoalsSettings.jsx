@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react"; // Added useCallback
 import {
   Button,
   TextField,
@@ -52,11 +52,7 @@ function GoalsSettings({ userSettings, updateUserSettings, setError, setSuccess 
     target_date: "",
   });
 
-  useEffect(() => {
-    fetchGoals();
-  }, [user]);
-
-  const fetchGoals = async () => {
+  const fetchGoals = useCallback(async () => {
     if (!user) return;
 
     setLoading(true);
@@ -66,6 +62,8 @@ function GoalsSettings({ userSettings, updateUserSettings, setError, setSuccess 
 
       if (data?.notification_preferences?.investment_goals) {
         setGoals(data.notification_preferences.investment_goals);
+      } else {
+        setGoals([]); // Ensure goals is an array even if not present
       }
     } catch (err) {
       console.error("Error fetching goals:", err);
@@ -73,7 +71,11 @@ function GoalsSettings({ userSettings, updateUserSettings, setError, setSuccess 
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, setError]); // Added setError as a dependency
+
+  useEffect(() => {
+    fetchGoals();
+  }, [user, fetchGoals]); // Added fetchGoals to dependency array
 
   const handleOpen = (goal = null) => {
     if (goal) {
@@ -114,6 +116,15 @@ function GoalsSettings({ userSettings, updateUserSettings, setError, setSuccess 
       setError("Goal name and target amount are required");
       return;
     }
+    if (parseFloat(currentGoal.target_amount) <= 0) {
+        setError("Target amount must be greater than zero.");
+        return;
+    }
+    if (currentGoal.current_amount && parseFloat(currentGoal.current_amount) < 0) {
+        setError("Current amount cannot be negative.");
+        return;
+    }
+
 
     setSaving(true);
     try {
@@ -124,15 +135,20 @@ function GoalsSettings({ userSettings, updateUserSettings, setError, setSuccess 
         if (index >= 0) {
           updatedGoals[index] = currentGoal;
         } else {
+          // This case should ideally not happen if editMode implies existing goal
+          // but as a fallback, add it.
           updatedGoals.push(currentGoal);
         }
       } else {
         updatedGoals.push(currentGoal);
       }
       
+      // Ensure userSettings and notification_preferences exist
+      const basePreferences = userSettings?.notification_preferences || {};
+
       // Update in Supabase
       const updatedPreferences = {
-        ...userSettings.notification_preferences,
+        ...basePreferences,
         investment_goals: updatedGoals,
       };
       
@@ -144,9 +160,10 @@ function GoalsSettings({ userSettings, updateUserSettings, setError, setSuccess 
       
       // Update local state
       setGoals(updatedGoals);
-      updateUserSettings({
+      updateUserSettings((prevSettings) => ({ // Use functional update for userSettings
+        ...prevSettings,
         notification_preferences: updatedPreferences,
-      });
+      }));
       
       setSuccess(editMode ? "Goal updated successfully" : "Goal added successfully");
       handleClose();
@@ -164,9 +181,12 @@ function GoalsSettings({ userSettings, updateUserSettings, setError, setSuccess 
     try {
       const updatedGoals = goals.filter(g => g.id !== id);
       
+      // Ensure userSettings and notification_preferences exist
+      const basePreferences = userSettings?.notification_preferences || {};
+
       // Update in Supabase
       const updatedPreferences = {
-        ...userSettings.notification_preferences,
+        ...basePreferences,
         investment_goals: updatedGoals,
       };
       
@@ -178,9 +198,10 @@ function GoalsSettings({ userSettings, updateUserSettings, setError, setSuccess 
       
       // Update local state
       setGoals(updatedGoals);
-      updateUserSettings({
+      updateUserSettings((prevSettings) => ({ // Use functional update
+        ...prevSettings,
         notification_preferences: updatedPreferences,
-      });
+      }));
       
       setSuccess("Goal deleted successfully");
     } catch (err) {
@@ -224,12 +245,14 @@ function GoalsSettings({ userSettings, updateUserSettings, setError, setSuccess 
             // Calculate progress percentage
             const current = parseFloat(goal.current_amount || 0);
             const target = parseFloat(goal.target_amount);
-            const percentage = target ? Math.min(100, (current / target) * 100) : 0;
+            const percentage = target > 0 ? Math.min(100, (current / target) * 100) : 0;
             
             // Calculate date information
             const hasTargetDate = !!goal.target_date;
             const targetDate = hasTargetDate ? new Date(goal.target_date) : null;
-            const daysLeft = hasTargetDate ? Math.ceil((targetDate - new Date()) / (1000 * 60 * 60 * 24)) : null;
+            const daysLeft = hasTargetDate && targetDate instanceof Date && !isNaN(targetDate)
+                             ? Math.ceil((targetDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) 
+                             : null;
             
             return (
               <Grid item xs={12} md={6} key={goal.id}>
@@ -262,7 +285,7 @@ function GoalsSettings({ userSettings, updateUserSettings, setError, setSuccess 
                     <Box sx={{ mb: 2 }}>
                       <Box display="flex" justifyContent="space-between" alignItems="center">
                         <Typography variant="body2">
-                          <strong>Progress:</strong> ${current.toFixed(2)} of ${target.toFixed(2)}
+                          <strong>Progress:</strong> ${current.toFixed(2)} of ${target > 0 ? target.toFixed(2) : '0.00'}
                         </Typography>
                         <Typography variant="body2" fontWeight="bold">
                           {percentage.toFixed(0)}%
@@ -281,10 +304,10 @@ function GoalsSettings({ userSettings, updateUserSettings, setError, setSuccess 
                       />
                     </Box>
                     
-                    {hasTargetDate && (
-                      <Typography variant="body2" color={daysLeft < 0 ? "error" : "textSecondary"}>
+                    {hasTargetDate && targetDate instanceof Date && !isNaN(targetDate) && daysLeft !== null && (
+                      <Typography variant="body2" color={daysLeft < 0 ? "error.main" : "textSecondary"}>
                         <strong>Target Date:</strong> {targetDate.toLocaleDateString()} 
-                        ({daysLeft < 0 ? `${Math.abs(daysLeft)} days overdue` : `${daysLeft} days left`})
+                        {daysLeft < 0 ? ` (${Math.abs(daysLeft)} days overdue)` : ` (${daysLeft} days left)`}
                       </Typography>
                     )}
                   </CardContent>
@@ -309,6 +332,8 @@ function GoalsSettings({ userSettings, updateUserSettings, setError, setSuccess 
                 onChange={handleChange}
                 fullWidth
                 required
+                error={!currentGoal.name}
+                helperText={!currentGoal.name ? "Goal name is required" : ""}
               />
             </Grid>
             
@@ -338,8 +363,13 @@ function GoalsSettings({ userSettings, updateUserSettings, setError, setSuccess 
                 onChange={handleChange}
                 fullWidth
                 required
-                inputProps={{ min: 0, step: "0.01" }}
+                inputProps={{ min: 0.01, step: "0.01" }}
                 type="number"
+                error={!currentGoal.target_amount || parseFloat(currentGoal.target_amount) <= 0}
+                helperText={
+                    !currentGoal.target_amount ? "Target amount is required" : 
+                    parseFloat(currentGoal.target_amount) <= 0 ? "Must be greater than 0" : ""
+                }
               />
             </Grid>
             
@@ -381,6 +411,10 @@ function GoalsSettings({ userSettings, updateUserSettings, setError, setSuccess 
                   onChange={handleChange}
                   fullWidth
                   inputProps={{ min: 0, step: "0.01" }}
+                  error={currentGoal.current_amount && parseFloat(currentGoal.current_amount) < 0}
+                  helperText={
+                      currentGoal.current_amount && parseFloat(currentGoal.current_amount) < 0 ? "Cannot be negative" : ""
+                  }
                 />
               </Grid>
             )}
@@ -392,9 +426,15 @@ function GoalsSettings({ userSettings, updateUserSettings, setError, setSuccess 
             onClick={saveGoal} 
             variant="contained" 
             color="primary"
-            disabled={saving}
+            disabled={
+                saving || 
+                !currentGoal.name || 
+                !currentGoal.target_amount || 
+                parseFloat(currentGoal.target_amount) <= 0 ||
+                (currentGoal.current_amount && parseFloat(currentGoal.current_amount) < 0)
+            }
           >
-            {saving ? "Saving..." : editMode ? "Update Goal" : "Add Goal"}
+            {saving ? <CircularProgress size={24} /> : editMode ? "Update Goal" : "Add Goal"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -402,4 +442,4 @@ function GoalsSettings({ userSettings, updateUserSettings, setError, setSuccess 
   );
 }
 
-export default GoalsSettings; 
+export default GoalsSettings;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import "../components/PortfolioSettings.css";
 import {
   Button,
@@ -46,7 +46,7 @@ const accountTypes = [
   "Other",
 ];
 
-function PortfolioSettings({ userSettings, updateUserSettings, setError, setSuccess }) {
+function PortfolioSettings({ setError, setSuccess }) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [accounts, setAccounts] = useState([]);
@@ -59,11 +59,7 @@ function PortfolioSettings({ userSettings, updateUserSettings, setError, setSucc
     description: "",
   });
 
-  useEffect(() => {
-    fetchAccounts();
-  }, [user]);
-
-  const fetchAccounts = async () => {
+  const fetchAccounts = useCallback(async () => {
     if (!user) return;
 
     setLoading(true);
@@ -77,7 +73,11 @@ function PortfolioSettings({ userSettings, updateUserSettings, setError, setSucc
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, setError]);
+
+  useEffect(() => {
+    fetchAccounts();
+  }, [user, fetchAccounts]);
 
   const handleOpen = (account = null) => {
     if (account) {
@@ -168,7 +168,7 @@ function PortfolioSettings({ userSettings, updateUserSettings, setError, setSucc
       <div className="portfolio-header">
         <h2>Your Accounts</h2>
         <p>Manage your investment and saving accounts.</p>
-        <Button 
+        <Button
           variant="contained"
           color="primary"
           onClick={() => handleOpen()}
@@ -211,16 +211,16 @@ function PortfolioSettings({ userSettings, updateUserSettings, setError, setSucc
                       </IconButton>
                     </div>
                   </div>
-                  
+
                   <Divider sx={{ my: 1 }} />
-                  
+
                   <Typography variant="body2" color="textSecondary">
                     <strong>Group:</strong> {account.credentials?.group || 'None'}
                   </Typography>
                   <Typography variant="body2" color="textSecondary">
                     <strong>Type:</strong> {account.credentials?.type || 'None'}
                   </Typography>
-                  
+
                   {account.description && (
                     <Typography variant="body2" sx={{ mt: 1 }}>
                       {account.description}
@@ -247,7 +247,7 @@ function PortfolioSettings({ userSettings, updateUserSettings, setError, setSucc
                 required
               />
             </Grid>
-            
+
             <Grid item xs={12} sm={6}>
               <FormControl fullWidth>
                 <InputLabel>Account Group</InputLabel>
@@ -265,7 +265,7 @@ function PortfolioSettings({ userSettings, updateUserSettings, setError, setSucc
                 </Select>
               </FormControl>
             </Grid>
-            
+
             <Grid item xs={12} sm={6}>
               <FormControl fullWidth>
                 <InputLabel>Account Type</InputLabel>
@@ -283,7 +283,7 @@ function PortfolioSettings({ userSettings, updateUserSettings, setError, setSucc
                 </Select>
               </FormControl>
             </Grid>
-            
+
             <Grid item xs={12}>
               <TextField
                 name="description"

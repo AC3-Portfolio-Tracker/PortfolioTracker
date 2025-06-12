@@ -3,6 +3,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 
 const ThemeContext = createContext();
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useTheme = () => useContext(ThemeContext);
 
 export const ThemeProviderWrapper = ({ children }) => {
@@ -223,4 +224,4 @@ export const ThemeProviderWrapper = ({ children }) => {
       </ThemeProvider>
     </ThemeContext.Provider>
   );
-}; 
+};

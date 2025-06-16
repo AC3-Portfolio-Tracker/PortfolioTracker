@@ -241,10 +241,35 @@ const BrokerUpload = () => {
     loadBrokerData();
   }, [loadBrokerData]); // brokerDisplayName (from route) will trigger re-fetch via loadBrokerData dependency
 
-  const handleUploadComplete = (importedCount) => {
-    setNotification({ open: true, message: `Successfully imported ${importedCount} transactions for ${brokerDisplayName}`, severity: "success" });
-    loadBrokerData();
-  };
+const handleUploadComplete = async (importedCount) => {
+  setNotification({
+    open: true,
+    message: `Successfully imported ${importedCount} transactions for ${brokerDisplayName}`,
+    severity: "success",
+  });
+
+  await loadBrokerData(); // Refresh data and calculate new portfolio value
+
+  // Insert snapshot after recalculating
+  const { error: snapshotError } = await supabase.from("portfolio_snapshots").insert([
+    {
+      user_id: user.id,
+      date: new Date().toISOString().split("T")[0], // today's date
+      total_value: currentBrokerPortfolioValue,
+      broker: brokerDisplayName,
+    },
+  ]);
+
+  if (snapshotError) {
+    console.error("Error inserting snapshot:", snapshotError);
+    setNotification({
+      open: true,
+      message: `Failed to save snapshot: ${snapshotError.message}`,
+      severity: "error",
+    });
+  }
+};
+
 
   const handleDeleteTransaction = async (transactionId) => {
     try {

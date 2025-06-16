@@ -20,12 +20,16 @@ import {
 import dayjs from "dayjs";
 import groupBy from "lodash.groupby";
 
+// Import useNavigate for navigation
+import { useNavigate } from "react-router-dom";
+
 const PerformancePage = () => {
   const [snapshots, setSnapshots] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [granularity, setGranularity] = useState("1D");
 
   const theme = useTheme(); // Access system theme
+  const navigate = useNavigate(); // Hook for navigation
 
   useEffect(() => {
     const fetchSnapshots = async () => {
@@ -125,8 +129,15 @@ const PerformancePage = () => {
         color: "text.primary",
       }}
     >
+      {/*Back to Reports Button */}
+      <Box sx={{ mb: 2 }}>
+        <Button variant="outlined" onClick={() => navigate("/reports")}>
+          ← Back to Reports
+        </Button>
+      </Box>
+
       <Typography variant="h4" gutterBottom>
-        Performance
+        Brokers Performance
       </Typography>
 
       <Paper
@@ -208,7 +219,7 @@ const PerformancePage = () => {
                 <Line
                   type="monotone"
                   dataKey="value"
-                  stroke="#00e676"
+                  stroke={theme.palette.primary.main}
                   strokeWidth={2}
                   dot={{ r: 3 }}
                 />
@@ -222,7 +233,7 @@ const PerformancePage = () => {
             <Button
               key={range}
               variant={granularity === range ? "contained" : "outlined"}
-              color="success"
+              color="primary"
               size="small"
               onClick={() => setGranularity(range)}
             >

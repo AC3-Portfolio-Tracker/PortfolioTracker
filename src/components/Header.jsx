@@ -85,7 +85,6 @@ function Header() {
             <li><NavLink to="/home" className={getLinkClass}>Overview</NavLink></li>
             <li><NavLink to="/brokers" className={getLinkClass}>Brokers</NavLink></li>
             <li><NavLink to="/holdings" className={getLinkClass}>Holdings</NavLink></li>
-            <li><NavLink to="/performance" className={getLinkClass}>Performance</NavLink></li>
             <li><NavLink to="/reports" className={getLinkClass}>Reports</NavLink></li>
             <li><NavLink to="/pricing" className={getLinkClass}>Pricing</NavLink></li>
             <li><NavLink to="/features" className={getLinkClass}>Features</NavLink></li>

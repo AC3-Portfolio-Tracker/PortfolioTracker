@@ -6,6 +6,7 @@ import TaxableIncome from "./TaxableIncome";
 import SoldSecurities from "./SoldSecurities";
 import HistoricCost from "./HistoricCost";
 import PerformanceReport from "./PerformanceReport";
+import Performance from "./Performance";
 
 
 
@@ -17,6 +18,7 @@ function ReportRoutes() {
       <Route path="sold-securities" element={<SoldSecurities />} />
       <Route path="historic-cost" element={<HistoricCost />} />
       <Route path="performance" element={<PerformanceReport />} />
+      <Route path="brokers-performance" element={<Performance />} />
 
 
     </Routes>

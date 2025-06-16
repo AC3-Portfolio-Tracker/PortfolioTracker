@@ -17,6 +17,11 @@ const reportSections = [
         description: "Track portfolio performance over time.",
         route: "performance",
       },
+      {
+        title: "Brokers Performance",
+        description: "Track portfolio performance over time.",
+        route: "brokers-performance",
+      },
     ],
   },
   {

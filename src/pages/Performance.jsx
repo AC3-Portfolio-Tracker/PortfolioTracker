@@ -16,27 +16,34 @@ import {
   Stack,
   Paper,
   useTheme,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
 } from "@mui/material";
 import dayjs from "dayjs";
 import groupBy from "lodash.groupby";
-
-// Import useNavigate for navigation
 import { useNavigate } from "react-router-dom";
 
 const PerformancePage = () => {
   const [snapshots, setSnapshots] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [granularity, setGranularity] = useState("1D");
+  const [selectedBroker, setSelectedBroker] = useState("All Brokers");
+  const [availableBrokers, setAvailableBrokers] = useState([]);
 
-  const theme = useTheme(); // Access system theme
-  const navigate = useNavigate(); // Hook for navigation
+  const theme = useTheme();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchSnapshots = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       const { data, error } = await supabase
         .from("portfolio_snapshots")
-        .select("date, total_value")
+        .select("date, total_value, broker")
         .eq("user_id", user.id)
         .order("date", { ascending: true });
 
@@ -45,12 +52,28 @@ const PerformancePage = () => {
         return;
       }
 
-      const formatted = data.map((row) => ({
-        date: row.date,
-        value: parseFloat(row.total_value),
-      }));
-      setSnapshots(formatted);
-      setFilteredData(formatted);
+      setSnapshots(
+        data.map((row) => ({
+          date: row.date,
+          value: parseFloat(row.total_value),
+          broker: row.broker,
+        }))
+      );
+
+      const predefined = [
+        "180 Markets",
+        "708 Wealth Management",
+        "Alpine Capital",
+        "ASR Wealth Advisers",
+        "CommSec",
+        "eToro",
+        "HSBC Australia",
+        "Moomoo",
+        "NAB Trade",
+        "Stake",
+        "Superhero",
+      ];
+      setAvailableBrokers(["All Brokers", ...predefined]);
     };
 
     fetchSnapshots();
@@ -59,66 +82,56 @@ const PerformancePage = () => {
   useEffect(() => {
     if (!snapshots.length) return;
 
-    let grouped;
+    const byBroker =
+      selectedBroker === "All Brokers"
+        ? snapshots
+        : snapshots.filter((s) => s.broker === selectedBroker);
 
     if (granularity === "1D") {
-      const today = dayjs().format("YYYY-MM-DD");
-      const todayData = snapshots.filter((s) =>
-        dayjs(s.date).isSame(today, "day")
-      );
-      setFilteredData(todayData);
+      const lastDate = dayjs(byBroker.slice(-1)[0]?.date).startOf("day");
+      setFilteredData(byBroker.filter((s) =>
+        dayjs(s.date).isSame(lastDate, "day")
+      ));
       return;
     }
 
-    switch (granularity) {
-      case "1W":
-        grouped = groupBy(snapshots, (s) =>
-          dayjs(s.date).startOf("week").format("YYYY-MM-DD")
-        );
-        break;
-      case "1M":
-        grouped = groupBy(snapshots, (s) =>
-          dayjs(s.date).format("YYYY-MM")
-        );
-        break;
-      case "1Y":
-        grouped = groupBy(snapshots, (s) =>
-          dayjs(s.date).format("YYYY")
-        );
-        break;
-      default: // "ALL"
-        setFilteredData(snapshots);
-        return;
+    let grouped;
+    if (granularity === "1W") {
+      grouped = groupBy(byBroker, (s) =>
+        dayjs(s.date).startOf("week").format("YYYY-MM-DD")
+      );
+    } else if (granularity === "1M") {
+      grouped = groupBy(byBroker, (s) =>
+        dayjs(s.date).format("YYYY-MM")
+      );
+    } else if (granularity === "1Y") {
+      grouped = groupBy(byBroker, (s) =>
+        dayjs(s.date).format("YYYY")
+      );
+    } else {
+      setFilteredData(byBroker);
+      return;
     }
 
-    const aggregated = Object.entries(grouped).map(([period, entries]) => {
-      const avg =
-        entries.reduce((sum, d) => sum + d.value, 0) / entries.length;
-      return { date: period, value: parseFloat(avg.toFixed(2)) };
-    });
+    setFilteredData(
+      Object.entries(grouped).map(([period, entries]) => {
+        const avg =
+          entries.reduce((sum, d) => sum + d.value, 0) / entries.length;
+        return { date: period, value: parseFloat(avg.toFixed(2)) };
+      })
+    );
+  }, [snapshots, granularity, selectedBroker]);
 
-    setFilteredData(aggregated);
-  }, [granularity, snapshots]);
-
-  // Total value logic for all granularities
-  let latest = 0;
-
-  if (granularity === "1D") {
-    latest = filteredData.reduce((sum, d) => sum + d.value, 0);
-  } else if (granularity === "1W") {
-    latest = filteredData.reduce((sum, d) => sum + d.value, 0);
-  } else if (granularity === "1M") {
-    latest = filteredData.reduce((sum, d) => sum + d.value, 0);
-  } else if (granularity === "1Y") {
-    latest = filteredData.reduce((sum, d) => sum + d.value, 0);
-  } else {
-    // "ALL"
-    latest = filteredData.reduce((sum, d) => sum + d.value, 0);
-  }
-
+  const total = filteredData.reduce((sum, d) => sum + d.value, 0);
   const start = filteredData[0]?.value || 0;
-  const change = latest - start;
-  const percentChange = start ? (change / start) * 100 : 0;
+  const change = total - start;
+  const pct = start ? (change / start) * 100 : 0;
+
+  // if no data, show a single zero‐point so axes still draw
+  const plotData =
+    filteredData.length > 0
+      ? filteredData
+      : [{ date: dayjs(snapshots.slice(-1)[0]?.date).format("YYYY-MM-DD"), value: 0 }];
 
   return (
     <Box
@@ -129,7 +142,6 @@ const PerformancePage = () => {
         color: "text.primary",
       }}
     >
-      {/*Back to Reports Button */}
       <Box sx={{ mb: 2 }}>
         <Button variant="outlined" onClick={() => navigate("/reports")}>
           ← Back to Reports
@@ -140,6 +152,21 @@ const PerformancePage = () => {
         Brokers Performance
       </Typography>
 
+      <FormControl sx={{ mb: 2, minWidth: 220 }} size="small">
+        <InputLabel>Select Broker</InputLabel>
+        <Select
+          value={selectedBroker}
+          label="Select Broker"
+          onChange={(e) => setSelectedBroker(e.target.value)}
+        >
+          {availableBrokers.map((b) => (
+            <MenuItem key={b} value={b}>
+              {b}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+
       <Paper
         elevation={3}
         sx={{
@@ -149,7 +176,7 @@ const PerformancePage = () => {
           width: "100%",
         }}
       >
-        <Typography variant="h5">
+        <Typography variant="h5" gutterBottom>
           {granularity === "1D"
             ? "Today's Total: "
             : granularity === "1W"
@@ -159,39 +186,33 @@ const PerformancePage = () => {
             : granularity === "1Y"
             ? "This Year's Total: "
             : "Total: "}
-          ${latest.toFixed(2)}
+          ${total.toFixed(2)}
         </Typography>
 
         <Typography sx={{ color: change >= 0 ? "#4caf50" : "#f44336" }}>
-          {change.toFixed(2)} {change >= 0 ? "↑" : "↓"}{" "}
-          {percentChange.toFixed(2)}%
+          {change.toFixed(2)} {change >= 0 ? "↑" : "↓"} {pct.toFixed(2)}%
         </Typography>
 
-        {/* Scrollable wider chart box */}
         <Box sx={{ overflowX: "auto", mt: 3 }}>
           <Box sx={{ width: "1150px" }}>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={filteredData}>
+              <LineChart data={plotData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#444" />
                 <XAxis
                   dataKey="date"
                   stroke="#aaa"
-                  tickFormatter={(tick) => {
-                    switch (granularity) {
-                      case "1Y":
-                        return dayjs(tick).format("YYYY");
-                      case "1M":
-                        return dayjs(tick).format("MMM YYYY");
-                      case "1W":
-                      case "1D":
-                      default:
-                        return dayjs(tick).format("MMM D");
-                    }
-                  }}
+                  tickFormatter={(t) =>
+                    granularity === "1Y"
+                      ? dayjs(t).format("YYYY")
+                      : granularity === "1M"
+                      ? dayjs(t).format("MMM YYYY")
+                      : dayjs(t).format("MMM D")
+                  }
                   minTickGap={20}
                 />
                 <YAxis
                   stroke="#aaa"
+                  domain={[0, "auto"]}
                   label={{
                     value: "Total Value",
                     angle: -90,
@@ -211,9 +232,9 @@ const PerformancePage = () => {
                     color: theme.palette.text.primary,
                   }}
                   labelStyle={{ color: theme.palette.text.secondary }}
-                  formatter={(value) => [`$${value.toFixed(2)}`, "Value"]}
-                  labelFormatter={(label) =>
-                    `Date: ${dayjs(label).format("YYYY-MM-DD")}`
+                  formatter={(v) => [`$${v.toFixed(2)}`, "Value"]}
+                  labelFormatter={(lbl) =>
+                    `Date: ${dayjs(lbl).format("YYYY-MM-DD")}`
                   }
                 />
                 <Line
@@ -229,15 +250,15 @@ const PerformancePage = () => {
         </Box>
 
         <Stack direction="row" spacing={2} justifyContent="center" mt={3}>
-          {["1D", "1W", "1M", "1Y", "ALL"].map((range) => (
+          {["1D", "1W", "1M", "1Y", "ALL"].map((r) => (
             <Button
-              key={range}
-              variant={granularity === range ? "contained" : "outlined"}
+              key={r}
+              variant={granularity === r ? "contained" : "outlined"}
               color="primary"
               size="small"
-              onClick={() => setGranularity(range)}
+              onClick={() => setGranularity(r)}
             >
-              {range}
+              {r}
             </Button>
           ))}
         </Stack>

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
-import CountryChart from "../components/CountryChart";
+import SecurityChart from "../components/SecurityChart";
 import CurrencyChart from "../components/CurrencyChart";
-import ClassChart from "../components/ClassChart";
-import SectorChart from "../components/SectorChart";
+import MarketChart from "../components/MarketChart";
+import TypeChart from "../components/TypeChart";
 
 const Holdings = () => {
   const [transactions, setTransactions] = useState([]);
@@ -84,13 +84,19 @@ const Holdings = () => {
     return Object.entries(map).map(([name, value]) => ({ name, value }));
   };
 
-  const classData = aggregateByKey("market");
+  const marketData = aggregateByKey("market");
   const currencyData = aggregateByKey("currency");
-  const countryData = aggregateByKey("code");
-  const sectorData = aggregateByKey("broker");
+  const securityData = aggregateByKey("code");
+  const typeData = aggregateByKey("type"); 
 
   return (
-    <div style={{ padding: "20px" }}>
+    <div style={{ 
+      padding: "60px", 
+      height: "100vh", 
+      width: "100vw",
+      boxSizing: "border-box",
+      overflow: "auto"
+      }}>
       <h2>Holdings Summary</h2>
 
       {/* <h1>CASH: {total.toFixed(2)}</h1> */}
@@ -111,10 +117,10 @@ const Holdings = () => {
           marginBottom: "30px",
         }}
       >
-        <ClassChart data={classData} />
+        <SecurityChart data={securityData} />
         <CurrencyChart data={currencyData} />
-        <CountryChart data={countryData} />
-        <SectorChart data={sectorData} />
+        <MarketChart data={marketData} /> 
+         <TypeChart data={typeData} />  
       </div>
 
 

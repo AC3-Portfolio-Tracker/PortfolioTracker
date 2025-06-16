@@ -1,19 +1,11 @@
 
 
-
 import React from 'react';
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  CartesianGrid
+  BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid
 } from 'recharts';
 
-const COLORS = ['#FF6384', '#36A2EB', '#FFCE56', '#8BC34A', '#FF9800'];
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
@@ -29,10 +21,10 @@ const CustomTooltip = ({ active, payload, label }) => {
   }
   return null;
 };
-const CurrencyChart = ({ data }) => {
+const MarketChart = ({ data }) => {
   return (
     <div>
-      <h3 style={{ textAlign: 'center' }}>By Currency</h3>
+      <h3 style={{ textAlign: 'center' }}>By Market</h3>
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={data} margin={{ top: 20, right: 30, left: 0, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" />
@@ -42,8 +34,8 @@ const CurrencyChart = ({ data }) => {
           <Legend />
           <Bar
             dataKey="value"
-            name="Holdings by Currency"
-            fill={COLORS[1]}
+            name="Holdings by Market"
+            fill={COLORS[3]}
             radius={[4, 4, 0, 0]}
           />
         </BarChart>
@@ -52,4 +44,4 @@ const CurrencyChart = ({ data }) => {
   );
 };
 
-export default CurrencyChart;
+export default MarketChart;

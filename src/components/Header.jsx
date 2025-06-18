@@ -86,8 +86,6 @@ function Header() {
             <li><NavLink to="/brokers" className={getLinkClass}>Brokers</NavLink></li>
             <li><NavLink to="/holdings" className={getLinkClass}>Holdings</NavLink></li>
             <li><NavLink to="/reports" className={getLinkClass}>Reports</NavLink></li>
-            <li><NavLink to="/pricing" className={getLinkClass}>Pricing</NavLink></li>
-            <li><NavLink to="/features" className={getLinkClass}>Features</NavLink></li>
           </ul>
         ) : (
           <ul>

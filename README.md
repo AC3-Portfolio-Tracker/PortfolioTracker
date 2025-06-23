@@ -1,12 +1,64 @@
-# React + Vite
+# Portfolio Tracker - Deployment Guide
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This guide will help you install Docker on **Ubuntu 20.04** and run the `portfoliotracker` Docker container headlessly.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🚀 Quick Docker Installation (Ubuntu 20.04)
 
-## Expanding the ESLint configuration
+Run this **one-liner** to install Docker via the CLI:
 
-If you are developing a production application, we recommend using TypeScript and enable type-aware lint rules. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+> (Press ENTER if it prompts you to)
+
+```bash
+sudo apt update && sudo apt install -y apt-transport-https ca-certificates curl gnupg lsb-release && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add - && sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable" && sudo apt update && sudo apt install -y docker-ce docker-ce-cli containerd.io && sudo systemctl enable docker && sudo systemctl start docker && sudo docker --version
+```
+
+## 🛠️ Building and Running from Source
+
+Since this project requires building the Docker image locally, follow the steps below.
+
+### Step 1 – Build the Docker Image
+
+In the project directory (where your `Dockerfile` is located), run:
+
+```bash
+docker build -t portfoliotracker .
+```
+### Step 2 – Run the Docker Container
+
+After building the image, run the container in **detached mode** (so it runs in the background without needing an active shell):
+
+```bash
+docker run -d --name portfolio-app --restart unless-stopped -p 4173:4173 portfoliotracker
+```
+## 🎯 Access the App
+Once the container is running, you can access the app in your browser at:
+```bash
+http://[YOUR_SERVER_IP]:4173
+```
+
+## 🔍 Useful Docker Commands
+
+Here are some common Docker commands to help you manage your container.
+
+### 📋 Check Running Containers
+```bash
+docker ps
+```
+## 📂 View Container Logs
+```bash
+docker logs -f portfolio-app
+```
+## 🛑 Stop the Container
+```bash
+docker stop portfolio-app
+```
+## ▶️ Start the Container
+```bash
+docker start portfolio-app
+```
+## 🗑️ Remove the Container
+```bash
+docker rm portfolio-app
+```
